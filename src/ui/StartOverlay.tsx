@@ -5,7 +5,7 @@ import { startAudio } from '../audio/synth'
  * ブラウザの自動再生制限を解除するための最初の 1 クリック。
  * 映像は操作なしで動くが、音だけはユーザー操作後に有効になる。
  */
-export function StartOverlay() {
+export function StartOverlay({ onStart }: { onStart: () => void }) {
   const [hidden, setHidden] = useState(false)
 
   if (hidden) return null
@@ -13,6 +13,7 @@ export function StartOverlay() {
   const handleStart = async () => {
     await startAudio()
     setHidden(true)
+    onStart()
   }
 
   return (

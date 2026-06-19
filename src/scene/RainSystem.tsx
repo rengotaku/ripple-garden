@@ -64,7 +64,7 @@ export function RainSystem({ field }: { field: WaterField }) {
     const barIdx = barIndexAt(x, z)
     const hit = barIdx >= 0
     if (hit) {
-      playNote(BARS[barIdx].note)
+      playNote(BARS[barIdx].note, x)
       hitRefs.current[barIdx].current = elapsedRef.current
     }
 
