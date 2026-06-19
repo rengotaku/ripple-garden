@@ -118,9 +118,12 @@ export function playNote(note: string, x: number): void {
 
   activeVoices += 1
   setTimeout(() => {
-    voice.dispose()
-    panVol.dispose()
-    activeVoices -= 1
+    try {
+      voice.dispose()
+      panVol.dispose()
+    } finally {
+      activeVoices -= 1 // dispose が失敗してもカウンタを必ず戻す
+    }
   }, 2600)
 }
 

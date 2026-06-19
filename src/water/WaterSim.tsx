@@ -100,7 +100,6 @@ export function WaterSim({ field }: { field: WaterField }) {
   }
   const fboA = useFBO(fboOpts)
   const fboB = useFBO(fboOpts)
-  const targets = useRef([fboA, fboB])
   const readIdx = useRef(0)
   const initFrames = useRef(2)
 
@@ -127,29 +126,34 @@ export function WaterSim({ field }: { field: WaterField }) {
     return { scene, camera, material, quad }
   }, [res])
 
-  // マウント時に両バッファをゼロクリア（未初期化テクスチャの NaN を防ぐ）
+  // マウント時に両バッファをゼロクリア（未初期化テクスチャの NaN を防ぐ）。
+  // StrictMode の再マウントで FBO が作り直されるため、毎回ゼロクリアして init からやり直す。
   useEffect(() => {
     const prevRT = gl.getRenderTarget()
-    for (const t of targets.current) {
+    for (const t of [fboA, fboB]) {
       gl.setRenderTarget(t)
       gl.setClearColor(0x000000, 0)
       gl.clear()
     }
     gl.setRenderTarget(prevRT)
-  }, [gl])
+    readIdx.current = 0
+    initFrames.current = 2
+  }, [gl, fboA, fboB])
 
   useEffect(() => {
-    const geom = sim.quad.geometry
-    const mat = sim.material
+    const { quad, material, scene } = sim
     return () => {
-      geom.dispose()
-      mat.dispose()
+      quad.geometry.dispose()
+      material.dispose()
+      scene.clear()
     }
   }, [sim])
 
   useFrame(() => {
-    const read = targets.current[readIdx.current]
-    const write = targets.current[1 - readIdx.current]
+    // 毎レンダーで最新の FBO を参照（StrictMode 再マウント後の破棄済み参照を避ける）。
+    const fbos = [fboA, fboB]
+    const read = fbos[readIdx.current]
+    const write = fbos[1 - readIdx.current]
     const u = sim.material.uniforms
 
     u.uPrev.value = read.texture

@@ -29,13 +29,13 @@ const randRange = (min: number, max: number) => min + Math.random() * (max - min
 const randPond = () => randRange(-POND_HALF * 0.95, POND_HALF * 0.95)
 const nextInterval = () => randRange(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX)
 
-/** (x,z) が当たるバーの index を返す。どれにも当たらなければ -1。 */
+/** (x,z) が当たるバーの配列インデックスを返す。どれにも当たらなければ -1。 */
 function barIndexAt(x: number, z: number): number {
-  for (const bar of BARS) {
-    const [bx, , bz] = bar.position
-    const [sx, , sz] = bar.size
+  for (let i = 0; i < BARS.length; i++) {
+    const [bx, , bz] = BARS[i].position
+    const [sx, , sz] = BARS[i].size
     if (Math.abs(x - bx) <= sx / 2 && Math.abs(z - bz) <= sz / 2) {
-      return bar.id
+      return i
     }
   }
   return -1

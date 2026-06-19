@@ -30,6 +30,7 @@ const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 export function Ripple({ id, x, z, y, variant, onDone }: RippleProps) {
   const ref = useRef<Mesh>(null)
   const age = useRef(0)
+  const done = useRef(false)
 
   const lifetime = variant === 'hit' ? HIT_RIPPLE_LIFETIME : RIPPLE_LIFETIME
   const maxRadius = variant === 'hit' ? HIT_RIPPLE_MAX_RADIUS : RIPPLE_MAX_RADIUS
@@ -37,11 +38,12 @@ export function Ripple({ id, x, z, y, variant, onDone }: RippleProps) {
 
   useFrame((_, delta) => {
     const mesh = ref.current
-    if (!mesh) return
+    if (!mesh || done.current) return
 
     age.current += delta
     const t = age.current / lifetime
     if (t >= 1) {
+      done.current = true
       onDone(id)
       return
     }

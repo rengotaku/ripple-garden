@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
   Color,
@@ -89,6 +89,9 @@ export function WaterPlane({ field }: { field: WaterField }) {
     }
     return mat
   }, [])
+
+  // JSX の prop として渡すマテリアルは R3F の管理外なので、自前で破棄する。
+  useEffect(() => () => material.dispose(), [material])
 
   useFrame(() => {
     uniforms.current.uHeight.value = field.texture
