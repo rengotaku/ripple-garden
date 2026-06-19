@@ -1,19 +1,21 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { MeshPhysicalMaterial, SphereGeometry } from 'three'
 import {
   BARS,
   IMPACT_STRENGTH,
-  IMPACT_STRENGTH_HIT,
   POND_HALF,
+  SPAWN_BURST_MAX,
   SPAWN_INTERVAL_MAX,
   SPAWN_INTERVAL_MIN,
   WATER_LEVEL,
   worldToUv,
 } from '../config'
-import { playNote } from '../audio/synth'
+import { playNote, playWaterDrop } from '../audio/synth'
 import type { WaterField } from '../water/waterField'
 import { Drop } from './Drop'
 import { Ripple, type RippleVariant } from './Ripple'
+import { Splash } from './Splash'
 import { XylophoneBar } from './XylophoneBar'
 
 type DropState = { id: number; x: number; z: number; landY: number }
@@ -24,6 +26,7 @@ type RippleState = {
   y: number
   variant: RippleVariant
 }
+type SplashState = { id: number; x: number; z: number; y: number }
 
 const randRange = (min: number, max: number) => min + Math.random() * (max - min)
 const randPond = () => randRange(-POND_HALF * 0.95, POND_HALF * 0.95)
@@ -50,59 +53,102 @@ function landingYAt(x: number, z: number): number {
 }
 
 /**
- * 放置系の中核。一定のゆらぎで水滴を生成し、着水で波紋を生み、
- * 鉄琴バーに当たれば音を鳴らす。滴・波紋の増減のみ React state で扱い、
- * 各オブジェクトのアニメーションは自身の useFrame に任せる。
+ * 放置系の中核。雨のように水滴を生成し、着水で波紋＋着水音を生む。
+ * 鉄琴バーに当たれば音を鳴らし、水滴が弾けて飛沫になる。
+ * 雫・波紋・飛沫の増減のみ React state で扱い、各オブジェクトのアニメーションは
+ * 自身の useFrame に任せる。雫の形状/マテリアルは共有して生成コストを抑える。
  */
 export function RainSystem({ field }: { field: WaterField }) {
   const [drops, setDrops] = useState<DropState[]>([])
   const [ripples, setRipples] = useState<RippleState[]>([])
+  const [splashes, setSplashes] = useState<SplashState[]>([])
   const nextId = useRef(0)
   const spawnTimer = useRef(nextInterval())
   const elapsedRef = useRef(0)
   // バーごとの最終ヒット時刻。発光の減衰に使う。
   const hitRefs = useRef(BARS.map(() => ({ current: -999 })))
 
+  // 雫・飛沫で共有する形状とマテリアル（夜の月明かりを拾うガラス質の水玉）。
+  const dropGeometry = useMemo(() => new SphereGeometry(0.06, 16, 16), [])
+  const dropMaterial = useMemo(
+    () =>
+      new MeshPhysicalMaterial({
+        color: '#dff3ff',
+        roughness: 0.02,
+        metalness: 0,
+        transparent: true,
+        opacity: 0.78,
+        ior: 1.33,
+        clearcoat: 1,
+        clearcoatRoughness: 0,
+        envMapIntensity: 2.2,
+        // 夜でも雫が暗く沈まないよう、控えめに発光（強すぎると Bloom で白飛びする）。
+        emissive: '#4aa0d8',
+        emissiveIntensity: 0.25,
+      }),
+    [],
+  )
+  useEffect(() => {
+    return () => {
+      dropGeometry.dispose()
+      dropMaterial.dispose()
+    }
+  }, [dropGeometry, dropMaterial])
+
   useFrame((state, delta) => {
     elapsedRef.current = state.clock.elapsedTime
     spawnTimer.current -= delta
     if (spawnTimer.current <= 0) {
       spawnTimer.current = nextInterval()
-      const id = nextId.current++
-      const x = randPond()
-      const z = randPond()
-      setDrops((prev) => [...prev, { id, x, z, landY: landingYAt(x, z) }])
+      const burst = 1 + Math.floor(Math.random() * SPAWN_BURST_MAX)
+      const fresh: DropState[] = []
+      for (let i = 0; i < burst; i++) {
+        const x = randPond()
+        const z = randPond()
+        fresh.push({ id: nextId.current++, x, z, landY: landingYAt(x, z) })
+      }
+      setDrops((prev) => [...prev, ...fresh])
     }
   })
 
-  const handleLand = useCallback((id: number, x: number, z: number) => {
-    setDrops((prev) => prev.filter((d) => d.id !== id))
+  const handleLand = useCallback(
+    (id: number, x: number, z: number) => {
+      setDrops((prev) => prev.filter((d) => d.id !== id))
 
-    const barIdx = barIndexAt(x, z)
-    const hit = barIdx >= 0
-    if (hit) {
-      playNote(BARS[barIdx].note, x)
-      hitRefs.current[barIdx].current = elapsedRef.current
-    }
+      const barIdx = barIndexAt(x, z)
 
-    // 水面そのものへ波を注入（全ての滴）。
-    const [u, v] = worldToUv(x, z)
-    field.impacts.push({
-      u,
-      v,
-      strength: hit ? IMPACT_STRENGTH_HIT : IMPACT_STRENGTH,
-    })
+      if (barIdx >= 0) {
+        // 音の出るバーに着水 → 発音＋発光＋飛沫
+        const bar = BARS[barIdx]
+        const barTop = bar.position[1] + bar.size[1] / 2
+        playNote(bar.note, x)
+        hitRefs.current[barIdx].current = elapsedRef.current
 
-    const rippleId = nextId.current++
-    const y = hit ? BARS[barIdx].position[1] + BARS[barIdx].size[1] / 2 : WATER_LEVEL
-    setRipples((prev) => [
-      ...prev,
-      { id: rippleId, x, z, y, variant: hit ? 'hit' : 'normal' },
-    ])
-  }, [field])
+        const splashId = nextId.current++
+        setSplashes((prev) => [...prev, { id: splashId, x, z, y: barTop }])
+
+        const rippleId = nextId.current++
+        setRipples((prev) => [...prev, { id: rippleId, x, z, y: barTop, variant: 'hit' }])
+        return
+      }
+
+      // 水面に着水 → リアルな着水音＋水面に波を注入＋波紋
+      playWaterDrop(x)
+      const [u, v] = worldToUv(x, z)
+      field.impacts.push({ u, v, strength: IMPACT_STRENGTH })
+
+      const rippleId = nextId.current++
+      setRipples((prev) => [...prev, { id: rippleId, x, z, y: WATER_LEVEL, variant: 'normal' }])
+    },
+    [field],
+  )
 
   const handleRippleDone = useCallback((id: number) => {
     setRipples((prev) => prev.filter((r) => r.id !== id))
+  }, [])
+
+  const handleSplashDone = useCallback((id: number) => {
+    setSplashes((prev) => prev.filter((s) => s.id !== id))
   }, [])
 
   return (
@@ -112,7 +158,29 @@ export function RainSystem({ field }: { field: WaterField }) {
       ))}
 
       {drops.map((d) => (
-        <Drop key={d.id} id={d.id} x={d.x} z={d.z} landY={d.landY} onLand={handleLand} />
+        <Drop
+          key={d.id}
+          id={d.id}
+          x={d.x}
+          z={d.z}
+          landY={d.landY}
+          geometry={dropGeometry}
+          material={dropMaterial}
+          onLand={handleLand}
+        />
+      ))}
+
+      {splashes.map((s) => (
+        <Splash
+          key={s.id}
+          id={s.id}
+          x={s.x}
+          z={s.z}
+          y={s.y}
+          geometry={dropGeometry}
+          material={dropMaterial}
+          onDone={handleSplashDone}
+        />
       ))}
 
       {ripples.map((r) => (

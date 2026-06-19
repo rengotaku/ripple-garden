@@ -61,8 +61,12 @@ try {
   // スタートオーバーレイをクリック（音解禁の経路も通す）
   await page.locator('.start-overlay').click().catch(() => {})
 
-  // 数フレーム回す
-  await page.waitForTimeout(3500)
+  // 序盤フレーム
+  await page.waitForTimeout(1500)
+  await page.screenshot({ path: '/tmp/ripple-garden-smoke-early.png' })
+
+  // 蓄積後（水面シムが発散しないか確認するため時間を置く）
+  await page.waitForTimeout(6000)
 
   const info = await page.evaluate(() => {
     const c = document.querySelector('canvas')

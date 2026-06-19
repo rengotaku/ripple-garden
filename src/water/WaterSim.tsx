@@ -62,6 +62,10 @@ const simFrag = /* glsl */ `
     info.g *= uDamping;
     info.r += info.g;
 
+    // 安定化: 高さ・速度が暴走（雨が強いと蓄積して発散）しないよう範囲を制限。
+    info.r = clamp(info.r, -1.5, 1.5);
+    info.g = clamp(info.g, -0.75, 0.75);
+
     // 着水点の注入（なめらかな cos バンプ）
     for (int i = 0; i < ${MAX_IMPACTS}; i++) {
       if (i >= uImpactCount) break;

@@ -27,6 +27,7 @@ let engine: Engine | null = null
 let started = false
 let muted = false
 let activeVoices = 0
+let activeDropVoices = 0
 
 async function loadTone(): Promise<ToneMod> {
   if (!Tone) Tone = await import('tone')
@@ -125,6 +126,45 @@ export function playNote(note: string, x: number): void {
       activeVoices -= 1 // dispose が失敗してもカウンタを必ず戻す
     }
   }, 2600)
+}
+
+/**
+ * 水面への着水音（リアルな「ポチャッ」）。
+ * 水滴の気泡共鳴を模して、ピッチが素早く上がる正弦波＋速い減衰。
+ * 滴ごとに基音と上昇量をゆらして、雨の粒立ちを出す。x で左右へ定位。
+ */
+export function playWaterDrop(x: number): void {
+  if (!started || !Tone || !engine) return
+  if (activeDropVoices > 12) return // 多発するのでやや低めに上限
+  const T = Tone
+  const now = T.now()
+
+  const pan = Math.max(-1, Math.min(1, x / POND_HALF))
+  const panVol = new T.PanVol(pan, -15)
+  panVol.connect(engine.reverb)
+  panVol.connect(engine.eq)
+
+  const f0 = 520 + Math.random() * 440
+  const voice = new T.Synth({
+    oscillator: { type: 'sine' },
+    envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.04 },
+    volume: -8,
+  }).connect(panVol)
+
+  voice.triggerAttackRelease(f0, 0.11, now, 0.5 + Math.random() * 0.4)
+  // 着水直後にピッチが跳ね上がる ＝ 水滴特有の「ポチャ」
+  voice.frequency.setValueAtTime(f0, now)
+  voice.frequency.exponentialRampToValueAtTime(f0 * (1.8 + Math.random() * 0.8), now + 0.05)
+
+  activeDropVoices += 1
+  setTimeout(() => {
+    try {
+      voice.dispose()
+      panVol.dispose()
+    } finally {
+      activeDropVoices -= 1
+    }
+  }, 400)
 }
 
 /** ミュート切り替え（クリックノイズを避けて短くランプ）。 */

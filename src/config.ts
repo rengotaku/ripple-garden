@@ -15,9 +15,13 @@ export const DROP_START_Y = 6
 /** 重力加速度（units/sec^2）。見栄え優先の値。 */
 export const GRAVITY = 9.0
 
-/** 水滴生成間隔のゆらぎ（秒）。min〜max の一様乱数で次の滴までの間隔を決める。 */
-export const SPAWN_INTERVAL_MIN = 0.25
-export const SPAWN_INTERVAL_MAX = 1.1
+/** 水滴生成間隔のゆらぎ（秒）。min〜max の一様乱数で次の滴までの間隔を決める。
+ *  しっかり雨が降っていて、バーにも頻繁に当たって音が鳴るくらいの密度。 */
+export const SPAWN_INTERVAL_MIN = 0.04
+export const SPAWN_INTERVAL_MAX = 0.16
+
+/** 1 回の生成で同時に落とす滴の数（ゆらぎを持たせて雨らしく）。 */
+export const SPAWN_BURST_MAX = 2
 
 /** 波紋の寿命（秒）と最大半径。 */
 export const RIPPLE_LIFETIME = 1.8
@@ -44,9 +48,9 @@ export const WATER_DISP_SCALE = 0.2
 /** 高さ勾配 → 法線の強さ（映り込みの歪み量）。波が光を拾うよう強めに。 */
 export const WATER_NORMAL_STRENGTH = 2.4
 
-/** 着水時に水面へ与える波の強さ（通常／バー命中）。 */
-export const IMPACT_STRENGTH = 0.42
-export const IMPACT_STRENGTH_HIT = 0.7
+/** 着水時に水面へ与える波の強さ（通常／バー命中）。雨が密なので 1 滴は控えめに。 */
+export const IMPACT_STRENGTH = 0.28
+export const IMPACT_STRENGTH_HIT = 0.5
 
 /** ワールド座標 (x,z) を水面テクスチャの uv に変換する。 */
 export function worldToUv(x: number, z: number): [number, number] {
