@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { Environment, Lightformer, OrbitControls } from '@react-three/drei'
+import { Environment, Lightformer, OrbitControls, Sparkles } from '@react-three/drei'
 import { ACESFilmicToneMapping } from 'three'
 import { POND_HALF, SIM_RES } from '../config'
 import { createWaterField } from '../water/waterField'
@@ -53,8 +53,23 @@ export function Scene() {
       <WaterPlane field={field} />
       <RainSystem field={field} />
 
+      {/* 水面の上に漂う微かな霧の粒子。premium な空気感を足す。 */}
+      <Sparkles
+        count={60}
+        scale={[POND_HALF * 2, 3.5, POND_HALF * 2]}
+        position={[0, 1.4, 0]}
+        size={2.4}
+        speed={0.25}
+        opacity={0.45}
+        color="#bfe9ff"
+      />
+
       <OrbitControls
         enablePan={false}
+        enableDamping
+        dampingFactor={0.05}
+        autoRotate
+        autoRotateSpeed={0.28}
         minDistance={5}
         maxDistance={18}
         maxPolarAngle={Math.PI / 2.2}

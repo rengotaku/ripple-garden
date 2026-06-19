@@ -1,4 +1,10 @@
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
+import {
+  EffectComposer,
+  Bloom,
+  BrightnessContrast,
+  HueSaturation,
+  Vignette,
+} from '@react-three/postprocessing'
 import { KernelSize } from 'postprocessing'
 
 /**
@@ -16,6 +22,9 @@ export function Effects() {
         kernelSize={KernelSize.LARGE}
         mipmapBlur
       />
+      {/* 夜の水面らしい、ややシアン寄り・低彩度の落ち着いた色調へ。 */}
+      <HueSaturation saturation={-0.08} />
+      <BrightnessContrast brightness={-0.03} contrast={0.09} />
       <Vignette eskil={false} offset={0.25} darkness={0.7} />
     </EffectComposer>
   )
