@@ -27,15 +27,48 @@ export const RIPPLE_MAX_RADIUS = 1.1
 export const HIT_RIPPLE_LIFETIME = 1.4
 export const HIT_RIPPLE_MAX_RADIUS = 0.9
 
-/** 鉄琴バー（細長い箱）の配置と寸法。 */
-export const BAR = {
-  position: [0, WATER_LEVEL + 0.1, 0.5] as const,
-  /** [幅(X), 高さ(Y), 奥行(Z)] */
-  size: [2.2, 0.2, 0.5] as const,
+/** バー 1 本分の定義。 */
+export type BarDef = {
+  id: number
+  /** 中心位置 [x, y, z] */
+  position: readonly [number, number, number]
+  /** 寸法 [幅(X)=バー厚, 高さ(Y), 奥行(Z)=バー長] */
+  size: readonly [number, number, number]
+  /** 当たったときに鳴る音。 */
+  note: string
+  /** バーの基調色。 */
+  color: string
 }
 
 /**
- * 鉄琴バーに当たったときに鳴らす音（ペンタトニック）。
- * 1 滴 = 1 音。当たるたびにこの中からランダムで選ぶと箱庭的に心地よい。
+ * マリンバ風に横一列へ並べた鉄琴バー。低音ほど長く（奥行 Z 大）色も温かく、
+ * 高音ほど短く明るい色にして視覚的にも音階が分かるようにする。
+ * 水滴がランダムに落ちる中で、たまたまバーに当たると音が鳴る——という放置の楽しみ。
+ *
+ * 音はペンタトニック（C メジャー系）。どの順で当たっても不協和になりにくい。
  */
-export const PENTATONIC = ['C5', 'D5', 'E5', 'G5', 'A5'] as const
+const BAR_NOTES = ['C4', 'D4', 'E4', 'G4', 'A4', 'C5', 'D5'] as const
+const BAR_COLORS = [
+  '#c98a6f',
+  '#c9a36f',
+  '#bfc96f',
+  '#6fc98a',
+  '#6fb3c9',
+  '#6f8ac9',
+  '#9f6fc9',
+] as const
+
+export const BARS: readonly BarDef[] = BAR_NOTES.map((note, i) => {
+  const count = BAR_NOTES.length
+  const spread = 5.6 // 並べる横幅
+  const x = -spread / 2 + (spread / (count - 1)) * i
+  // 低音(左)ほど長く、高音(右)ほど短く。
+  const depth = 1.25 - (0.7 * i) / (count - 1)
+  return {
+    id: i,
+    position: [x, WATER_LEVEL + 0.09, 0.4] as const,
+    size: [0.6, 0.18, depth] as const,
+    note,
+    color: BAR_COLORS[i],
+  }
+})

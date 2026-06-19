@@ -1,23 +1,24 @@
-import { useRef, type MutableRefObject } from 'react'
+import { useMemo, useRef, type MutableRefObject } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Color, type MeshStandardMaterial } from 'three'
-import { BAR } from '../config'
+import type { BarDef } from '../config'
 
 export type XylophoneBarProps = {
-  /** 最後にバーへ着水した時刻（clock.elapsedTime）。発光の減衰に使う。 */
+  bar: BarDef
+  /** このバーへ最後に着水した時刻（clock.elapsedTime）。発光の減衰に使う。 */
   lastHitRef: MutableRefObject<number>
 }
 
-const BASE_COLOR = new Color('#6fb3c9')
 const GLOW_COLOR = new Color('#fff1c2')
 const GLOW_DECAY = 2.5 // 秒で減衰
 
 /**
- * 水面に置いた鉄琴バー（細長い箱）。
- * 着水したタイミングからの経過時間に応じて emissive が立ち上がり、徐々に収まる。
+ * マリンバ風の鉄琴バー 1 本。着水のタイミングからの経過時間に応じて
+ * emissive が立ち上がり徐々に収まる（Bloom で柔らかく光る）。
  */
-export function XylophoneBar({ lastHitRef }: XylophoneBarProps) {
+export function XylophoneBar({ bar, lastHitRef }: XylophoneBarProps) {
   const matRef = useRef<MeshStandardMaterial>(null)
+  const baseColor = useMemo(() => new Color(bar.color), [bar.color])
 
   useFrame((state) => {
     const mat = matRef.current
@@ -25,17 +26,17 @@ export function XylophoneBar({ lastHitRef }: XylophoneBarProps) {
     const since = state.clock.elapsedTime - lastHitRef.current
     const glow = Math.max(0, 1 - since * GLOW_DECAY)
     mat.emissive.copy(GLOW_COLOR).multiplyScalar(glow)
-    mat.emissiveIntensity = glow * 2
+    mat.emissiveIntensity = glow * 2.2
   })
 
   return (
-    <mesh position={[...BAR.position]} castShadow receiveShadow>
-      <boxGeometry args={[...BAR.size]} />
+    <mesh position={[...bar.position]} castShadow receiveShadow>
+      <boxGeometry args={[...bar.size]} />
       <meshStandardMaterial
         ref={matRef}
-        color={BASE_COLOR}
-        roughness={0.35}
-        metalness={0.6}
+        color={baseColor}
+        roughness={0.3}
+        metalness={0.65}
       />
     </mesh>
   )

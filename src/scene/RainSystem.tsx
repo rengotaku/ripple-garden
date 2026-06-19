@@ -1,12 +1,12 @@
 import { useCallback, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
-  BAR,
+  BARS,
   POND_HALF,
   SPAWN_INTERVAL_MAX,
   SPAWN_INTERVAL_MIN,
 } from '../config'
-import { playHit } from '../audio/synth'
+import { playNote } from '../audio/synth'
 import { Drop } from './Drop'
 import { Ripple, type RippleVariant } from './Ripple'
 import { XylophoneBar } from './XylophoneBar'
@@ -18,11 +18,16 @@ const randRange = (min: number, max: number) => min + Math.random() * (max - min
 const randPond = () => randRange(-POND_HALF * 0.95, POND_HALF * 0.95)
 const nextInterval = () => randRange(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX)
 
-/** (x,z) が鉄琴バーの XZ 範囲内かどうか。 */
-function isOnBar(x: number, z: number): boolean {
-  const [bx, , bz] = BAR.position
-  const [sx, , sz] = BAR.size
-  return Math.abs(x - bx) <= sx / 2 && Math.abs(z - bz) <= sz / 2
+/** (x,z) が当たるバーの index を返す。どれにも当たらなければ -1。 */
+function barIndexAt(x: number, z: number): number {
+  for (const bar of BARS) {
+    const [bx, , bz] = bar.position
+    const [sx, , sz] = bar.size
+    if (Math.abs(x - bx) <= sx / 2 && Math.abs(z - bz) <= sz / 2) {
+      return bar.id
+    }
+  }
+  return -1
 }
 
 /**
@@ -36,7 +41,8 @@ export function RainSystem() {
   const nextId = useRef(0)
   const spawnTimer = useRef(nextInterval())
   const elapsedRef = useRef(0)
-  const lastHitRef = useRef(-999)
+  // バーごとの最終ヒット時刻。発光の減衰に使う。
+  const hitRefs = useRef(BARS.map(() => ({ current: -999 })))
 
   useFrame((state, delta) => {
     elapsedRef.current = state.clock.elapsedTime
@@ -51,10 +57,11 @@ export function RainSystem() {
   const handleLand = useCallback((id: number, x: number, z: number) => {
     setDrops((prev) => prev.filter((d) => d.id !== id))
 
-    const hit = isOnBar(x, z)
+    const barIdx = barIndexAt(x, z)
+    const hit = barIdx >= 0
     if (hit) {
-      playHit()
-      lastHitRef.current = elapsedRef.current
+      playNote(BARS[barIdx].note)
+      hitRefs.current[barIdx].current = elapsedRef.current
     }
 
     const rippleId = nextId.current++
@@ -70,7 +77,9 @@ export function RainSystem() {
 
   return (
     <group>
-      <XylophoneBar lastHitRef={lastHitRef} />
+      {BARS.map((bar) => (
+        <XylophoneBar key={bar.id} bar={bar} lastHitRef={hitRefs.current[bar.id]} />
+      ))}
 
       {drops.map((d) => (
         <Drop key={d.id} id={d.id} x={d.x} z={d.z} onLand={handleLand} />

@@ -1,5 +1,4 @@
 import * as Tone from 'tone'
-import { PENTATONIC } from '../config'
 
 /**
  * 鉄琴っぽい減衰の速いシンセを 1 つ用意し、滴がバーに当たるたびに鳴らす。
@@ -28,9 +27,8 @@ export async function startAudio(): Promise<void> {
   started = true
 }
 
-/** バーに着水したときに鳴らす。ペンタトニックからランダムで 1 音。 */
-export function playHit(): void {
+/** バーに着水したときに、そのバーの音を鳴らす。 */
+export function playNote(note: string): void {
   if (!started) return
-  const note = PENTATONIC[Math.floor(Math.random() * PENTATONIC.length)]
   ensureSynth().triggerAttackRelease(note, '8n')
 }
