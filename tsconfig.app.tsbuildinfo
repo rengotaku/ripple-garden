@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/config.ts","./src/main.tsx","./src/audio/synth.ts","./src/scene/Drop.tsx","./src/scene/RainSystem.tsx","./src/scene/Ripple.tsx","./src/scene/Scene.tsx","./src/scene/WaterPlane.tsx","./src/scene/XylophoneBar.tsx","./src/ui/StartOverlay.tsx"],"version":"5.9.3"}
