@@ -1,8 +1,11 @@
+import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei'
 import { ACESFilmicToneMapping } from 'three'
-import { POND_HALF } from '../config'
-import { WaterPlane } from './WaterPlane'
+import { POND_HALF, SIM_RES } from '../config'
+import { createWaterField } from '../water/waterField'
+import { WaterPlane } from '../water/WaterPlane'
+import { WaterSim } from '../water/WaterSim'
 import { RainSystem } from './RainSystem'
 import { Effects } from './Effects'
 
@@ -12,6 +15,8 @@ import { Effects } from './Effects'
  * 水面、放置で動く水滴・波紋・鉄琴バー、そして後処理（Bloom/Vignette）。
  */
 export function Scene() {
+  const field = useMemo(() => createWaterField(SIM_RES), [])
+
   return (
     <Canvas
       shadows
@@ -44,8 +49,9 @@ export function Scene() {
         <Lightformer intensity={0.5} position={[4, 2, 2]} scale={[3, 3, 1]} color="#ffe39a" />
       </Environment>
 
-      <WaterPlane />
-      <RainSystem />
+      <WaterSim field={field} />
+      <WaterPlane field={field} />
+      <RainSystem field={field} />
 
       <OrbitControls
         enablePan={false}

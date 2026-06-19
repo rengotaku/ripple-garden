@@ -27,6 +27,32 @@ export const RIPPLE_MAX_RADIUS = 1.1
 export const HIT_RIPPLE_LIFETIME = 1.4
 export const HIT_RIPPLE_MAX_RADIUS = 0.9
 
+/** ===== 水面シミュレーション（GPU 波動方程式） ===== */
+
+/** シミュレーション用テクスチャ解像度（正方）。 */
+export const SIM_RES = 256
+
+/** 1 フレームで注入できる着水点の最大数。 */
+export const MAX_IMPACTS = 12
+
+/** 波の減衰係数（1 に近いほど長く揺れる）。速度積分形では 0.99〜0.997 が安定。 */
+export const WAVE_DAMPING = 0.994
+
+/** 高さ → 頂点変位のスケール（ワールド単位）。 */
+export const WATER_DISP_SCALE = 0.16
+
+/** 高さ勾配 → 法線の強さ（映り込みの歪み量）。 */
+export const WATER_NORMAL_STRENGTH = 1.7
+
+/** 着水時に水面へ与える波の強さ（通常／バー命中）。 */
+export const IMPACT_STRENGTH = 0.42
+export const IMPACT_STRENGTH_HIT = 0.7
+
+/** ワールド座標 (x,z) を水面テクスチャの uv に変換する。 */
+export function worldToUv(x: number, z: number): [number, number] {
+  return [x / (POND_HALF * 2) + 0.5, z / (POND_HALF * 2) + 0.5]
+}
+
 /** バー 1 本分の定義。 */
 export type BarDef = {
   id: number

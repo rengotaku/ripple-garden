@@ -2,11 +2,15 @@ import { useCallback, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
   BARS,
+  IMPACT_STRENGTH,
+  IMPACT_STRENGTH_HIT,
   POND_HALF,
   SPAWN_INTERVAL_MAX,
   SPAWN_INTERVAL_MIN,
+  worldToUv,
 } from '../config'
 import { playNote } from '../audio/synth'
+import type { WaterField } from '../water/waterField'
 import { Drop } from './Drop'
 import { Ripple, type RippleVariant } from './Ripple'
 import { XylophoneBar } from './XylophoneBar'
@@ -35,7 +39,7 @@ function barIndexAt(x: number, z: number): number {
  * 鉄琴バーに当たれば音を鳴らす。滴・波紋の増減のみ React state で扱い、
  * 各オブジェクトのアニメーションは自身の useFrame に任せる。
  */
-export function RainSystem() {
+export function RainSystem({ field }: { field: WaterField }) {
   const [drops, setDrops] = useState<DropState[]>([])
   const [ripples, setRipples] = useState<RippleState[]>([])
   const nextId = useRef(0)
@@ -64,12 +68,20 @@ export function RainSystem() {
       hitRefs.current[barIdx].current = elapsedRef.current
     }
 
+    // 水面そのものへ波を注入（全ての滴）。
+    const [u, v] = worldToUv(x, z)
+    field.impacts.push({
+      u,
+      v,
+      strength: hit ? IMPACT_STRENGTH_HIT : IMPACT_STRENGTH,
+    })
+
     const rippleId = nextId.current++
     setRipples((prev) => [
       ...prev,
       { id: rippleId, x, z, variant: hit ? 'hit' : 'normal' },
     ])
-  }, [])
+  }, [field])
 
   const handleRippleDone = useCallback((id: number) => {
     setRipples((prev) => prev.filter((r) => r.id !== id))
