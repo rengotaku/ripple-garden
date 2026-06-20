@@ -1,20 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { MeshPhysicalMaterial, SphereGeometry } from 'three'
+import {
+  Color,
+  type Group,
+  MeshPhysicalMaterial,
+  NormalBlending,
+  PlaneGeometry,
+  ShaderMaterial,
+  SphereGeometry,
+} from 'three'
 import {
   BARS,
   IMPACT_STRENGTH,
   POND_HALF,
-  SPAWN_BURST_MAX,
-  SPAWN_INTERVAL_MAX,
-  SPAWN_INTERVAL_MIN,
+  SLIDE_AMP_X,
+  SLIDE_AMP_Z,
   WATER_LEVEL,
   worldToUv,
 } from '../config'
+import { settings } from '../state/settings'
 import { playNote, playWaterDrop } from '../audio/synth'
 import type { WaterField } from '../water/waterField'
 import { Drop } from './Drop'
 import { Ripple, type RippleVariant } from './Ripple'
+import { rippleFrag, rippleVert } from './rippleShader'
 import { Splash } from './Splash'
 import { XylophoneBar } from './XylophoneBar'
 
@@ -28,47 +37,56 @@ type RippleState = {
 }
 type SplashState = { id: number; x: number; z: number; y: number }
 
+/** 雨量スライダー最大時の毎秒生成数。 */
+const MAX_RATE = 22
+
 const randRange = (min: number, max: number) => min + Math.random() * (max - min)
 const randPond = () => randRange(-POND_HALF * 0.95, POND_HALF * 0.95)
-const nextInterval = () => randRange(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX)
 
-/** (x,z) が当たるバーの配列インデックスを返す。どれにも当たらなければ -1。 */
-function barIndexAt(x: number, z: number): number {
+/** 現在の雨量から次の滴までの間隔（秒）を決める。雨量 0 なら Infinity（生成しない）。 */
+function nextInterval(): number {
+  const rate = settings.rain * MAX_RATE
+  if (rate <= 0.01) return Infinity
+  return (1 / rate) * randRange(0.5, 1.5)
+}
+
+/** (localX, localZ)（バー基準のローカル座標）が当たるバーの index を返す。なければ -1。 */
+function barIndexAt(localX: number, localZ: number): number {
   for (let i = 0; i < BARS.length; i++) {
     const [bx, , bz] = BARS[i].position
     const [sx, , sz] = BARS[i].size
-    if (Math.abs(x - bx) <= sx / 2 && Math.abs(z - bz) <= sz / 2) {
+    if (Math.abs(localX - bx) <= sx / 2 && Math.abs(localZ - bz) <= sz / 2) {
       return i
     }
   }
   return -1
 }
 
-/** (x,z) に落ちた滴の着地高さ。バー上ならバー天面、なければ水面。 */
-function landingYAt(x: number, z: number): number {
-  const idx = barIndexAt(x, z)
+/** ローカル座標での着地高さ。バー上ならバー天面、なければ水面。 */
+function landingYAt(localX: number, localZ: number): number {
+  const idx = barIndexAt(localX, localZ)
   if (idx < 0) return WATER_LEVEL
   const bar = BARS[idx]
   return bar.position[1] + bar.size[1] / 2
 }
 
 /**
- * 放置系の中核。雨のように水滴を生成し、着水で波紋＋着水音を生む。
- * 鉄琴バーに当たれば音を鳴らし、水滴が弾けて飛沫になる。
- * 雫・波紋・飛沫の増減のみ React state で扱い、各オブジェクトのアニメーションは
- * 自身の useFrame に任せる。雫の形状/マテリアルは共有して生成コストを抑える。
+ * 放置系の中核。雨量（スライダー）に応じて水滴を生成し、着水で波紋＋着水音を生む。
+ * 鉄琴バーに当たれば発音＋発光＋飛沫。自動スライドモードではバー列がゆっくり動き、
+ * 当たる滴が移り変わって音楽が変化する。
  */
 export function RainSystem({ field }: { field: WaterField }) {
   const [drops, setDrops] = useState<DropState[]>([])
   const [ripples, setRipples] = useState<RippleState[]>([])
   const [splashes, setSplashes] = useState<SplashState[]>([])
   const nextId = useRef(0)
-  const spawnTimer = useRef(nextInterval())
+  const spawnTimer = useRef(0.1)
   const elapsedRef = useRef(0)
-  // バーごとの最終ヒット時刻。発光の減衰に使う。
   const hitRefs = useRef(BARS.map(() => ({ current: -999 })))
+  const barGroup = useRef<Group>(null)
+  // バー列の現在のスライドオフセット（自動スライドモードで更新）。
+  const slide = useRef({ x: 0, z: 0 })
 
-  // 雫・飛沫で共有する形状とマテリアル（夜の月明かりを拾うガラス質の水玉）。
   const dropGeometry = useMemo(() => new SphereGeometry(0.06, 16, 16), [])
   const dropMaterial = useMemo(
     () =>
@@ -82,9 +100,26 @@ export function RainSystem({ field }: { field: WaterField }) {
         clearcoat: 1,
         clearcoatRoughness: 0,
         envMapIntensity: 2.2,
-        // 夜でも雫が暗く沈まないよう、控えめに発光（強すぎると Bloom で白飛びする）。
         emissive: '#4aa0d8',
         emissiveIntensity: 0.25,
+      }),
+    [],
+  )
+  const rippleGeometry = useMemo(() => new PlaneGeometry(1, 1), [])
+  const rippleMaterial = useMemo(
+    () =>
+      new ShaderMaterial({
+        vertexShader: rippleVert,
+        fragmentShader: rippleFrag,
+        transparent: true,
+        depthWrite: false,
+        blending: NormalBlending,
+        toneMapped: true,
+        uniforms: {
+          uColor: { value: new Color('#9ed3f2') },
+          uProgress: { value: 0 },
+          uStrength: { value: 0.7 },
+        },
       }),
     [],
   )
@@ -92,22 +127,40 @@ export function RainSystem({ field }: { field: WaterField }) {
     return () => {
       dropGeometry.dispose()
       dropMaterial.dispose()
+      rippleGeometry.dispose()
+      rippleMaterial.dispose()
     }
-  }, [dropGeometry, dropMaterial])
+  }, [dropGeometry, dropMaterial, rippleGeometry, rippleMaterial])
 
   useFrame((state, delta) => {
-    elapsedRef.current = state.clock.elapsedTime
+    const t = state.clock.elapsedTime
+    elapsedRef.current = t
+
+    // 自動スライド: ゆっくりした 2 軸の揺れでバー列が池を巡る。
+    if (settings.autoSlide) {
+      slide.current.x = Math.cos(t * 0.13) * SLIDE_AMP_X
+      slide.current.z = Math.sin(t * 0.2) * SLIDE_AMP_Z
+    } else {
+      slide.current.x = 0
+      slide.current.z = 0
+    }
+    if (barGroup.current) {
+      barGroup.current.position.x = slide.current.x
+      barGroup.current.position.z = slide.current.z
+    }
+
     spawnTimer.current -= delta
     if (spawnTimer.current <= 0) {
-      spawnTimer.current = nextInterval()
-      const burst = 1 + Math.floor(Math.random() * SPAWN_BURST_MAX)
-      const fresh: DropState[] = []
-      for (let i = 0; i < burst; i++) {
+      const interval = nextInterval()
+      if (!isFinite(interval)) {
+        spawnTimer.current = 0.3 // 雨が止んでいる間は時々再チェック
+      } else {
+        spawnTimer.current = interval
         const x = randPond()
         const z = randPond()
-        fresh.push({ id: nextId.current++, x, z, landY: landingYAt(x, z) })
+        const landY = landingYAt(x - slide.current.x, z - slide.current.z)
+        setDrops((prev) => [...prev, { id: nextId.current++, x, z, landY }])
       }
-      setDrops((prev) => [...prev, ...fresh])
     }
   })
 
@@ -115,10 +168,11 @@ export function RainSystem({ field }: { field: WaterField }) {
     (id: number, x: number, z: number) => {
       setDrops((prev) => prev.filter((d) => d.id !== id))
 
-      const barIdx = barIndexAt(x, z)
+      const localX = x - slide.current.x
+      const localZ = z - slide.current.z
+      const barIdx = barIndexAt(localX, localZ)
 
       if (barIdx >= 0) {
-        // 音の出るバーに着水 → 発音＋発光＋飛沫
         const bar = BARS[barIdx]
         const barTop = bar.position[1] + bar.size[1] / 2
         playNote(bar.note, x)
@@ -126,17 +180,14 @@ export function RainSystem({ field }: { field: WaterField }) {
 
         const splashId = nextId.current++
         setSplashes((prev) => [...prev, { id: splashId, x, z, y: barTop }])
-
         const rippleId = nextId.current++
         setRipples((prev) => [...prev, { id: rippleId, x, z, y: barTop, variant: 'hit' }])
         return
       }
 
-      // 水面に着水 → リアルな着水音＋水面に波を注入＋波紋
       playWaterDrop(x)
       const [u, v] = worldToUv(x, z)
       field.impacts.push({ u, v, strength: IMPACT_STRENGTH })
-
       const rippleId = nextId.current++
       setRipples((prev) => [...prev, { id: rippleId, x, z, y: WATER_LEVEL, variant: 'normal' }])
     },
@@ -153,9 +204,11 @@ export function RainSystem({ field }: { field: WaterField }) {
 
   return (
     <group>
-      {BARS.map((bar) => (
-        <XylophoneBar key={bar.id} bar={bar} lastHitRef={hitRefs.current[bar.id]} />
-      ))}
+      <group ref={barGroup}>
+        {BARS.map((bar) => (
+          <XylophoneBar key={bar.id} bar={bar} lastHitRef={hitRefs.current[bar.id]} />
+        ))}
+      </group>
 
       {drops.map((d) => (
         <Drop
@@ -191,6 +244,8 @@ export function RainSystem({ field }: { field: WaterField }) {
           z={r.z}
           y={r.y}
           variant={r.variant}
+          geometry={rippleGeometry}
+          material={rippleMaterial}
           onDone={handleRippleDone}
         />
       ))}

@@ -52,6 +52,10 @@ export const WATER_NORMAL_STRENGTH = 2.4
 export const IMPACT_STRENGTH = 0.28
 export const IMPACT_STRENGTH_HIT = 0.5
 
+/** 自動スライドモードでのバー列の振れ幅（X/Z）。池の中をゆっくり巡る。 */
+export const SLIDE_AMP_X = 1.8
+export const SLIDE_AMP_Z = 2.6
+
 /** ワールド座標 (x,z) を水面テクスチャの uv に変換する。 */
 export function worldToUv(x: number, z: number): [number, number] {
   return [x / (POND_HALF * 2) + 0.5, z / (POND_HALF * 2) + 0.5]

@@ -61,20 +61,70 @@ body {
   animation: pulse 2.4s ease-in-out infinite;
 }
 
-.control-btn {
+.controls {
   position: fixed;
   right: 1.1rem;
   bottom: 1.1rem;
-  width: 2.6rem;
-  height: 2.6rem;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.9rem;
+  background: rgba(14, 28, 42, 0.5);
+  backdrop-filter: blur(8px);
+  color: #e8f4ff;
+  font-size: 0.8rem;
+  font-weight: 300;
+  user-select: none;
+  width: 11.5rem;
+}
+
+.control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.control-label {
+  opacity: 0.8;
+  letter-spacing: 0.04em;
+}
+
+.controls input[type='range'] {
+  width: 100%;
+  accent-color: #6fb3c9;
+  cursor: pointer;
+}
+
+.control-toggle {
+  border: 1px solid rgba(120, 170, 200, 0.3);
+  border-radius: 0.6rem;
+  background: rgba(20, 38, 54, 0.5);
+  color: #cfe6f3;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.control-toggle.on {
+  background: rgba(60, 110, 150, 0.55);
+  border-color: rgba(150, 210, 240, 0.6);
+  color: #eaf6ff;
+}
+
+.control-btn {
+  align-self: flex-end;
+  width: 2.4rem;
+  height: 2.4rem;
   border: none;
   border-radius: 50%;
   background: rgba(20, 38, 54, 0.55);
-  backdrop-filter: blur(6px);
   color: #e8f4ff;
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
-  z-index: 9;
   transition: background 0.2s ease, transform 0.1s ease;
 }
 
