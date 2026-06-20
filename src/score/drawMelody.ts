@@ -8,6 +8,8 @@ export type Point = { x: number; y: number; t: number }
 export const MELODY_STEP_SEC = 0.36
 /** 1 音あたりの横方向の目安ピクセル（横に長く描くほど音数が増える）。 */
 const PX_PER_NOTE = 56
+/** 上下の端に設ける「最高音／最低音」帯の割合。上の方に描けば高音へ届きやすくする。 */
+const PITCH_PAD = 0.16
 
 /** 横位置 x での線の縦位置 y（左→右の描線を想定。最初に x をまたぐ区間を線形補間）。 */
 function yAtX(points: Point[], x: number): number {
@@ -61,8 +63,11 @@ export function pointsToMelody(points: Point[], height: number): SongNote[] {
       sy += yAtX(points, x + (step * s) / 4)
       ns++
     }
-    const frac = 1 - Math.max(0, Math.min(1, sy / ns / height)) // 上=高音
-    notes.push({ note: poolNoteAt(frac), beats: 1 })
+    // 上下に余白帯を設けて、最高音・最低音へ届きやすくする。
+    // 画面の上 PITCH_PAD は最高音、下 PITCH_PAD は最低音にクランプ。
+    const yn = sy / ns / height // 0(上)〜1(下)
+    const frac = (1 - yn - PITCH_PAD) / (1 - 2 * PITCH_PAD)
+    notes.push({ note: poolNoteAt(frac), beats: 1 }) // poolNoteAt 内で 0..1 にクランプ
   }
   return notes
 }
