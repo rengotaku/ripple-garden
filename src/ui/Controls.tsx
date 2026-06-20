@@ -22,7 +22,7 @@ import { pointsToMelody, type Point } from '../score/drawMelody'
 import { exportComposition, importComposition } from '../score/melodyIO'
 import { DrawOverlay } from './DrawOverlay'
 
-/** 右下の操作パネル＋なぞり作曲（レイヤー）。 */
+/** 右＝なぞって作曲メニュー、左＝星と場の設定メニュー（別々に開閉）。 */
 export function Controls() {
   const [mute, setMute] = useState(isMuted())
   const [rainOn, setRainOnState] = useState(settings.rainOn)
@@ -31,21 +31,22 @@ export function Controls() {
   const [fall, setFallState] = useState(settings.fallSpeed)
   const [circle, setCircle] = useState(settings.barShape === 'circle')
   const [drawing, setDrawing] = useState(false)
-  const [open, setOpen] = useState(true)
+  const [composeOpen, setComposeOpen] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [scoreMsg, setScoreMsg] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
   const layers = useSyncExternalStore(subscribeLayers, getLayers, getLayers)
 
   const handleScore = async () => {
-    setScoreMsg('生成中…')
+    setScoreMsg('…')
     try {
       const ok = await downloadScore()
-      setScoreMsg(ok ? '保存しました' : 'まだ音がありません')
+      setScoreMsg(ok ? '✓' : '空')
     } catch {
-      setScoreMsg('生成に失敗しました')
+      setScoreMsg('×')
     }
-    setTimeout(() => setScoreMsg(null), 2500)
+    setTimeout(() => setScoreMsg(null), 2000)
   }
 
   const handleDrawComplete = (points: Point[], height: number) => {
@@ -66,7 +67,11 @@ export function Controls() {
   return (
     <>
       {drawing && (
-        <DrawOverlay onComplete={handleDrawComplete} onCancel={() => setDrawing(false)} />
+        <DrawOverlay
+          onComplete={handleDrawComplete}
+          onCancel={() => setDrawing(false)}
+          priorLayers={layers}
+        />
       )}
 
       <input
@@ -81,23 +86,22 @@ export function Controls() {
         }}
       />
 
-      {!drawing && !open && (
-        <button className="controls-fab" onClick={() => setOpen(true)} aria-label="メニューを開く">
-          ⚙
+      {/* ===== 右: なぞって作曲メニュー ===== */}
+      {!drawing && !composeOpen && (
+        <button
+          className="controls-fab"
+          onClick={() => setComposeOpen(true)}
+          aria-label="作曲メニューを開く"
+        >
+          ✎
         </button>
       )}
-
-      {!drawing && open && (
+      {!drawing && composeOpen && (
         <div className="controls">
-          <button
-            className="controls-close"
-            onClick={() => setOpen(false)}
-            aria-label="メニューを閉じる"
-          >
+          <button className="controls-close" onClick={() => setComposeOpen(false)} aria-label="閉じる">
             ×
           </button>
 
-          {/* なぞって作曲（メイン） */}
           <button className="control-toggle primary" onClick={() => setDrawing(true)}>
             ✎ なぞって作曲（旋律を追加）
           </button>
@@ -108,18 +112,10 @@ export function Controls() {
                 <div key={l.id} className={`layer-row ${l.enabled ? '' : 'off'}`}>
                   <span className="layer-dot" style={{ background: l.color }} />
                   <span className="layer-name">旋律 {i + 1}</span>
-                  <button
-                    className="layer-btn"
-                    onClick={() => toggleLayer(l.id)}
-                    aria-label={l.enabled ? '無効化' : '有効化'}
-                  >
+                  <button className="layer-btn" onClick={() => toggleLayer(l.id)} aria-label="有効/無効">
                     {l.enabled ? '🔊' : '🔇'}
                   </button>
-                  <button
-                    className="layer-btn"
-                    onClick={() => removeLayer(l.id)}
-                    aria-label="削除"
-                  >
+                  <button className="layer-btn" onClick={() => removeLayer(l.id)} aria-label="削除">
                     🗑
                   </button>
                 </div>
@@ -128,19 +124,31 @@ export function Controls() {
           )}
 
           <div className="control-iorow">
-            <button
-              className="control-mini"
-              disabled={!layers.length}
-              onClick={() => exportComposition(getLayers())}
-            >
+            <button className="control-mini" disabled={!layers.length} onClick={() => exportComposition(getLayers())}>
               ⤓ 書き出し
             </button>
             <button className="control-mini" onClick={() => fileInput.current?.click()}>
               ⤒ 読み込み
             </button>
           </div>
+        </div>
+      )}
 
-          <hr className="control-sep" />
+      {/* ===== 左: 星と場の設定メニュー ===== */}
+      {!drawing && !settingsOpen && (
+        <button
+          className="controls-fab left"
+          onClick={() => setSettingsOpen(true)}
+          aria-label="設定メニューを開く"
+        >
+          ⚙
+        </button>
+      )}
+      {!drawing && settingsOpen && (
+        <div className="controls left">
+          <button className="controls-close" onClick={() => setSettingsOpen(false)} aria-label="閉じる">
+            ×
+          </button>
 
           <button
             className={`control-toggle ${rainOn ? 'on' : ''}`}
@@ -150,11 +158,11 @@ export function Controls() {
               setRainOnState(next)
             }}
           >
-            {rainOn ? '🌧 雨: 降っている' : '⏸ 雨: 停止中'}
+            {rainOn ? '✦ 星: 降っている' : '✦ 星: 停止中'}
           </button>
 
           <label className="control-row">
-            <span className="control-label">☔ 雨量</span>
+            <span className="control-label">✦ 星の量</span>
             <input
               type="range"
               min={0}
@@ -186,7 +194,7 @@ export function Controls() {
           </label>
 
           <label className="control-row">
-            <span className="control-label">💧 落下速度</span>
+            <span className="control-label">💫 落下速度</span>
             <input
               type="range"
               min={0}
@@ -201,32 +209,34 @@ export function Controls() {
             />
           </label>
 
-          <button
-            className={`control-toggle ${circle ? 'on' : ''}`}
-            onClick={() => {
-              const next = !circle
-              setBarShape(next ? 'circle' : 'row')
-              setCircle(next)
-            }}
-          >
-            {circle ? '◎ 配置: 円形' : '▭ 配置: 一列'}
-          </button>
-
-          <button className="control-toggle" onClick={handleScore}>
-            {scoreMsg ?? '♪ 楽譜をダウンロード'}
-          </button>
-
-          <button
-            className="control-btn"
-            onClick={() => {
-              const next = !mute
-              setMuted(next)
-              setMute(next)
-            }}
-            aria-label={mute ? '音を出す' : 'ミュート'}
-          >
-            {mute ? '🔇' : '🔊'}
-          </button>
+          <div className="control-iconrow">
+            <button
+              className="control-btn"
+              onClick={() => {
+                const next = !circle
+                setBarShape(next ? 'circle' : 'row')
+                setCircle(next)
+              }}
+              aria-label="配置切替"
+              title={circle ? '配置: 円形' : '配置: 一列'}
+            >
+              {circle ? '◎' : '▭'}
+            </button>
+            <button className="control-btn" onClick={handleScore} aria-label="楽譜DL" title="楽譜をダウンロード">
+              {scoreMsg ?? '♪'}
+            </button>
+            <button
+              className="control-btn"
+              onClick={() => {
+                const next = !mute
+                setMuted(next)
+                setMute(next)
+              }}
+              aria-label={mute ? '音を出す' : 'ミュート'}
+            >
+              {mute ? '🔇' : '🔊'}
+            </button>
+          </div>
         </div>
       )}
     </>

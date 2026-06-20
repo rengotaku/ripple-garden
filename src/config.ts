@@ -9,8 +9,8 @@ export const WATER_LEVEL = 0
 /** 水面（正方形）の一辺の半分の長さ。落下範囲もこの矩形に収める。 */
 export const POND_HALF = 5
 
-/** 水滴の落下開始高さ。 */
-export const DROP_START_Y = 6
+/** 星の落下開始高さ。高いほど長く落ちて軌跡（流星の筋）が長くなる。 */
+export const DROP_START_Y = 13
 
 /** 重力加速度（units/sec^2）。飛沫など固定用途のベース値。 */
 export const GRAVITY = 9.0

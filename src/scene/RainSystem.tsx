@@ -7,7 +7,7 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { MeshPhysicalMaterial, SphereGeometry } from 'three'
+import { MeshBasicMaterial, SphereGeometry } from 'three'
 import {
   type BarDef,
   circleFocusRadius,
@@ -120,20 +120,10 @@ export function RainSystem() {
   const hitRefsRef = useRef(hitRefs)
   hitRefsRef.current = hitRefs
 
-  const dropGeometry = useMemo(() => new SphereGeometry(0.024, 10, 10), [])
+  // 宇宙なので「落ちる星」。小さく明るい光点（落下中は筋を引いて流星のように）。
+  const dropGeometry = useMemo(() => new SphereGeometry(0.05, 10, 10), [])
   const dropMaterial = useMemo(
-    () =>
-      new MeshPhysicalMaterial({
-        color: '#cfeeff',
-        roughness: 0.04,
-        metalness: 0,
-        transparent: true,
-        opacity: 0.34,
-        ior: 1.33,
-        clearcoat: 1,
-        clearcoatRoughness: 0.03,
-        envMapIntensity: 1.0,
-      }),
+    () => new MeshBasicMaterial({ color: '#eaf4ff', toneMapped: false }),
     [],
   )
   useEffect(() => {

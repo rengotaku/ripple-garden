@@ -81,6 +81,26 @@ body {
   background: rgba(35, 60, 84, 0.75);
 }
 
+.controls-fab.left {
+  right: auto;
+  left: 1.1rem;
+}
+
+.controls.left {
+  right: auto;
+  left: 1.1rem;
+}
+
+.control-iconrow {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+.control-iconrow .control-btn {
+  align-self: auto;
+}
+
 .controls-close {
   align-self: flex-end;
   width: 1.7rem;

@@ -1,10 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Point } from '../score/drawMelody'
+import { pitchToY, type Point } from '../score/drawMelody'
+import type { Layer } from '../state/layers'
 
 export type DrawOverlayProps = {
   /** 描き終わったときに点列と画面高さを渡す。 */
   onComplete: (points: Point[], height: number) => void
   onCancel: () => void
+  /** すでにあるレイヤー（重ねがけ用に薄く表示）。 */
+  priorLayers: Layer[]
+}
+
+/** レイヤーの音符列を、薄く表示するための折れ線（横=順番, 縦=音高）に。 */
+function layerPolyline(layer: Layer, w: number, h: number): string {
+  const n = layer.notes.length
+  if (n < 2) return ''
+  const pts: string[] = []
+  for (let i = 0; i < n; i++) {
+    const note = layer.notes[i].note
+    if (!note) continue
+    const x = (i / (n - 1)) * w
+    pts.push(`${x.toFixed(0)},${pitchToY(note, h).toFixed(0)}`)
+  }
+  return pts.join(' ')
 }
 
 /** 縦の目安（音の高さ）のガイド線。 */
@@ -22,7 +39,7 @@ const TIME_LINES = [0.2, 0.4, 0.6, 0.8]
  * 目安軸（高音/中音/低音のガイド）を表示。1 ストロークで onComplete。
  * 点の取り込みは即時、表示は rAF でまとめて更新（長い線でも軽い）。
  */
-export function DrawOverlay({ onComplete, onCancel }: DrawOverlayProps) {
+export function DrawOverlay({ onComplete, onCancel, priorLayers }: DrawOverlayProps) {
   const [pts, setPts] = useState<Point[]>([])
   const ptsRef = useRef<Point[]>([])
   const drawing = useRef(false)
@@ -79,6 +96,20 @@ export function DrawOverlay({ onComplete, onCancel }: DrawOverlayProps) {
         <text x={w - 90} y={h - 16} className="guide-text">
           時間 →
         </text>
+
+        {/* 重ねがけ用: 既存レイヤーを薄く表示 */}
+        {priorLayers.map((l) => (
+          <polyline
+            key={l.id}
+            points={layerPolyline(l, w, h)}
+            fill="none"
+            stroke={l.color}
+            strokeWidth={2}
+            strokeOpacity={0.28}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        ))}
 
         <polyline
           points={pts.map((p) => `${p.x},${p.y}`).join(' ')}

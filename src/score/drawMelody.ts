@@ -1,73 +1,70 @@
 import type { SongNote } from '../audio/songs'
-import { poolNoteAt } from '../config'
+import { PITCH_POOL, poolNoteAt } from '../config'
 
-/** 描画点（画面座標）。 */
+/** 描画点（画面座標）。t は時刻(ms)。 */
 export type Point = { x: number; y: number; t: number }
 
 /** 1 音あたりの再生時間（秒）＝テンポ。custom 曲のテンポもこれに合わせる。 */
 export const MELODY_STEP_SEC = 0.36
-/** 1 音あたりの横方向の目安ピクセル（横に長く描くほど音数が増える）。 */
-const PX_PER_NOTE = 56
+/** 1 音あたりの「なぞった線の長さ」目安ピクセル（長く描くほど音数が増える）。 */
+const PX_PER_NOTE = 70
 /** 上下の端に設ける「最高音／最低音」帯の割合。上の方に描けば高音へ届きやすくする。 */
 const PITCH_PAD = 0.16
 
-/** 横位置 x での線の縦位置 y（左→右の描線を想定。最初に x をまたぐ区間を線形補間）。 */
-function yAtX(points: Point[], x: number): number {
-  let nearestY = points[0].y
-  let nearestD = Infinity
-  for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i]
-    const b = points[i + 1]
-    const lo = Math.min(a.x, b.x)
-    const hi = Math.max(a.x, b.x)
-    if (x >= lo && x <= hi) {
-      const span = b.x - a.x
-      const f = Math.abs(span) > 1e-6 ? (x - a.x) / span : 0
-      return a.y + (b.y - a.y) * f
-    }
-    const da = Math.abs(a.x - x)
-    const db = Math.abs(b.x - x)
-    if (Math.min(da, db) < nearestD) {
-      nearestD = Math.min(da, db)
-      nearestY = da < db ? a.y : b.y
-    }
-  }
-  return nearestY
+/** 音名 → 画面 y（縦マッピングの逆。前レイヤーを薄く描く用）。 */
+export function pitchToY(note: string, height: number): number {
+  const idx = PITCH_POOL.indexOf(note)
+  const frac = idx >= 0 ? idx / (PITCH_POOL.length - 1) : 0.5
+  return height * (1 - PITCH_PAD - frac * (1 - 2 * PITCH_PAD))
 }
 
 /**
- * なぞった線をメロディに変換する（ピアノロール方式）。
- * 横位置＝時間（左→右）、縦位置＝音の高さ（上が高音）。
- * 横に描いた幅を等間隔に区切り、各位置の高さ → 音にマップする。
- * ペンタトニックに量子化されるので外れた音にならない。
+ * なぞった線をメロディに変換する。
+ * 「なぞった線に沿って（弧長で）」等間隔にサンプリングするので、実際になぞった箇所
+ * だけが音になる（横方向に補間して描いていない所まで埋める、という挙動はしない）。
+ * 縦位置＝音の高さ（上が高音）。ペンタトニックに量子化されるので外れた音にならない。
  */
 export function pointsToMelody(points: Point[], height: number): SongNote[] {
   if (points.length < 2 || height <= 0) return []
-  let minX = Infinity
-  let maxX = -Infinity
-  for (const p of points) {
-    if (p.x < minX) minX = p.x
-    if (p.x > maxX) maxX = p.x
-  }
-  const width = Math.max(1, maxX - minX)
-  const count = Math.max(4, Math.min(96, Math.round(width / PX_PER_NOTE)))
-  const step = width / Math.max(1, count - 1)
 
+  // 線に沿った累積距離（弧長）。
+  const cum: number[] = [0]
+  for (let i = 1; i < points.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y))
+  }
+  const total = cum[cum.length - 1]
+  if (total < 2) return []
+
+  /** 弧長 s の位置での y（線分を線形補間）。 */
+  const yAtArc = (s: number): number => {
+    if (s <= 0) return points[0].y
+    if (s >= total) return points[points.length - 1].y
+    // 単調増加なので線形探索で十分。
+    for (let i = 0; i < points.length - 1; i++) {
+      if (s >= cum[i] && s <= cum[i + 1]) {
+        const seg = cum[i + 1] - cum[i]
+        const f = seg > 1e-6 ? (s - cum[i]) / seg : 0
+        return points[i].y + (points[i + 1].y - points[i].y) * f
+      }
+    }
+    return points[points.length - 1].y
+  }
+
+  const count = Math.max(4, Math.min(96, Math.round(total / PX_PER_NOTE)))
+  const stepLen = total / Math.max(1, count - 1)
   const notes: SongNote[] = []
   for (let k = 0; k < count; k++) {
-    const x = minX + step * k
-    // 横方向に少し平均してジッタを均す（なめらかな音運び）。
+    const s = stepLen * k
+    // 弧長方向に少し平均してジッタを均す（なめらかな音運び）。
     let sy = 0
     let ns = 0
-    for (let s = -2; s <= 2; s++) {
-      sy += yAtX(points, x + (step * s) / 4)
+    for (let j = -2; j <= 2; j++) {
+      sy += yAtArc(s + (stepLen * j) / 4)
       ns++
     }
-    // 上下に余白帯を設けて、最高音・最低音へ届きやすくする。
-    // 画面の上 PITCH_PAD は最高音、下 PITCH_PAD は最低音にクランプ。
-    const yn = sy / ns / height // 0(上)〜1(下)
+    const yn = sy / ns / height
     const frac = (1 - yn - PITCH_PAD) / (1 - 2 * PITCH_PAD)
-    notes.push({ note: poolNoteAt(frac), beats: 1 }) // poolNoteAt 内で 0..1 にクランプ
+    notes.push({ note: poolNoteAt(frac), beats: 1 })
   }
   return notes
 }
