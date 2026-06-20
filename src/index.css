@@ -201,6 +201,64 @@ body {
   cursor: pointer;
 }
 
+.control-toggle.primary {
+  background: rgba(60, 110, 150, 0.55);
+  border: 1px solid rgba(150, 210, 240, 0.5);
+  color: #eaf6ff;
+}
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 9rem;
+  overflow-y: auto;
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0.45rem;
+  background: rgba(20, 38, 54, 0.5);
+}
+
+.layer-row.off {
+  opacity: 0.45;
+}
+
+.layer-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.layer-name {
+  flex: 1;
+  font-size: 0.76rem;
+}
+
+.layer-btn {
+  border: none;
+  background: transparent;
+  color: #cfe6f3;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.1rem 0.2rem;
+}
+
+.layer-btn:hover {
+  color: #fff;
+}
+
+.control-sep {
+  border: none;
+  border-top: 1px solid rgba(120, 170, 200, 0.18);
+  margin: 0.2rem 0;
+}
+
 .control-iorow {
   display: flex;
   gap: 0.4rem;

@@ -20,8 +20,9 @@ import {
   WATER_LEVEL,
 } from '../config'
 import { getLayoutSnapshot, settings, subscribeLayout } from '../state/settings'
+import { getLayers } from '../state/layers'
 import { playNote } from '../audio/synth'
-import { SONGS, noteToMidi } from '../audio/songs'
+import { noteToMidi } from '../audio/songs'
 import { MELODY_STEP_SEC } from '../score/drawMelody'
 import { Drop } from './Drop'
 import { Splash } from './Splash'
@@ -94,11 +95,8 @@ export function RainSystem() {
   const nextId = useRef(0)
   const spawnTimer = useRef(0.1)
   const elapsedRef = useRef(0)
-  // 曲演奏の進行状態。
-  const songIdRef = useRef('')
-  const melodyRef = useRef<unknown>(null) // 現在のメロディ配列の参照（差し替え検出用）
-  const melodyIndex = useRef(0)
-  const melodyTimer = useRef(0)
+  // レイヤーごとの再生状態（index と次の音までの残り時間）。
+  const layerState = useRef(new Map<number, { index: number; timer: number }>())
   // 曲演奏の雫が「正確に鳴らす音」を id ごとに保持（最寄りバーに落としつつ正音を発音）。
   const noteOverrides = useRef(new Map<number, string>())
 
@@ -145,52 +143,49 @@ export function RainSystem() {
     }
   }, [dropGeometry, dropMaterial])
 
+  // 1 音を「最寄りのバーへ落とす雫」として出す（正音はサンプラーで鳴らす）。
+  const spawnMelodyDrop = (note: string) => {
+    const curBars = barsRef.current
+    const idx = nearestBarIndex(curBars, note)
+    if (idx < 0) return
+    const bar = curBars[idx]
+    const barTop = bar.position[1] + bar.size[1] / 2
+    const id = nextId.current++
+    noteOverrides.current.set(id, note)
+    setDrops((prev) => [
+      ...prev,
+      { id, x: bar.position[0], z: bar.position[2], landY: barTop, startY: barTop + 1.0 },
+    ])
+  }
+
   useFrame((state, delta) => {
     elapsedRef.current = state.clock.elapsedTime
 
-    // --- 曲演奏モード（曲が選ばれている間はランダム雨を止め、メロディを雨で奏でる） ---
-    const songId = settings.song
-    const song =
-      songId === 'custom'
-        ? settings.customMelody && settings.customMelody.length
-          ? { notes: settings.customMelody, tempo: MELODY_STEP_SEC }
-          : null
-        : songId
-          ? SONGS[songId]
-          : null
-    if (song) {
-      // 曲が変わった or なぞり直しでメロディ配列が差し替わったら先頭から。
-      if (songIdRef.current !== songId || melodyRef.current !== song.notes) {
-        songIdRef.current = songId
-        melodyRef.current = song.notes
-        melodyIndex.current = 0
-        melodyTimer.current = 0
+    // --- なぞって作曲のレイヤーを同時ループ再生 ---
+    const layers = getLayers()
+    const activeIds = new Set<number>()
+    for (const layer of layers) {
+      if (!layer.enabled || !layer.notes.length) continue
+      activeIds.add(layer.id)
+      let st = layerState.current.get(layer.id)
+      if (!st) {
+        st = { index: 0, timer: 0 }
+        layerState.current.set(layer.id, st)
       }
-      melodyTimer.current -= delta
-      if (melodyTimer.current <= 0) {
-        const ev = song.notes[melodyIndex.current]
-        if (ev.note) {
-          const curBars = barsRef.current
-          const idx = nearestBarIndex(curBars, ev.note)
-          if (idx >= 0) {
-            const bar = curBars[idx]
-            const barTop = bar.position[1] + bar.size[1] / 2
-            const id = nextId.current++
-            noteOverrides.current.set(id, ev.note) // 最寄りバーに落としつつ正音を鳴らす
-            setDrops((prev) => [
-              ...prev,
-              { id, x: bar.position[0], z: bar.position[2], landY: barTop, startY: barTop + 1.0 },
-            ])
-          }
-        }
-        melodyTimer.current += ev.beats * song.tempo
-        melodyIndex.current = (melodyIndex.current + 1) % song.notes.length
+      st.timer -= delta
+      if (st.timer <= 0) {
+        const ev = layer.notes[st.index % layer.notes.length]
+        if (ev.note) spawnMelodyDrop(ev.note)
+        st.timer += ev.beats * MELODY_STEP_SEC
+        st.index = (st.index + 1) % layer.notes.length
       }
-      return
     }
-    songIdRef.current = ''
+    // 無効化/削除されたレイヤーの状態は破棄。
+    for (const id of layerState.current.keys()) {
+      if (!activeIds.has(id)) layerState.current.delete(id)
+    }
 
-    // --- ランダム雨モード ---
+    // --- ランダム雨（アンビエント。雨量/停止トグルで制御。レイヤーと同時に流れる） ---
     spawnTimer.current -= delta
     if (spawnTimer.current <= 0) {
       const interval = nextInterval()
