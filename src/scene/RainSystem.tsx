@@ -99,6 +99,8 @@ export function RainSystem() {
   const layerState = useRef(new Map<number, { index: number; timer: number }>())
   // 曲演奏の星が「正確に鳴らす音」を id ごとに保持（最寄りバーに落としつつ正音を発音）。
   const noteOverrides = useRef(new Map<number, string>())
+  // 星トグルの直前値。停止に切り替わった瞬間を検出して飛行中の星を消すため。
+  const prevRainOn = useRef(settings.rainOn)
 
   // 音域＋配置 → バー列を動的生成（変更で板を作り直す）。
   const layout = useSyncExternalStore(subscribeLayout, getLayoutSnapshot, getLayoutSnapshot)
@@ -164,6 +166,12 @@ export function RainSystem() {
 
   useFrame((state, delta) => {
     elapsedRef.current = state.clock.elapsedTime
+
+    // 星停止に切り替わった瞬間、飛行中のアンビエント星を即クリア（曲の星=noteOverrides 持ちは残す）。
+    if (prevRainOn.current && !settings.rainOn) {
+      setDrops((prev) => prev.filter((d) => noteOverrides.current.has(d.id)))
+    }
+    prevRainOn.current = settings.rainOn
 
     // --- なぞって作曲のレイヤーを同時ループ再生 ---
     const layers = getLayers()
