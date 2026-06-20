@@ -11,7 +11,6 @@ import { MeshPhysicalMaterial, SphereGeometry } from 'three'
 import {
   type BarDef,
   circleFocusRadius,
-  IMPACT_STRENGTH,
   levelToCount,
   makeBars,
   POND_HALF,
@@ -19,13 +18,11 @@ import {
   RAIN_FOCUS_Z_HALF,
   rowFocusXHalf,
   WATER_LEVEL,
-  worldToUv,
 } from '../config'
 import { getLayoutSnapshot, settings, subscribeLayout } from '../state/settings'
 import { playNote } from '../audio/synth'
 import { SONGS, noteToMidi } from '../audio/songs'
 import { MELODY_STEP_SEC } from '../score/drawMelody'
-import type { WaterField } from '../water/waterField'
 import { Drop } from './Drop'
 import { Splash } from './Splash'
 import { XylophoneBar } from './XylophoneBar'
@@ -91,7 +88,7 @@ function landingYAt(bars: readonly BarDef[], x: number, z: number): number {
  * バー命中で発音＋発光＋飛沫。音域スライダーで本数（音域の幅）、
  * 配置トグルで一列／円形が変わる（円形は的が密集して当たりやすい＝賑やか）。
  */
-export function RainSystem({ field }: { field: WaterField }) {
+export function RainSystem() {
   const [drops, setDrops] = useState<DropState[]>([])
   const [splashes, setSplashes] = useState<SplashState[]>([])
   const nextId = useRef(0)
@@ -245,15 +242,12 @@ export function RainSystem({ field }: { field: WaterField }) {
         return
       }
 
-      // バー外: 曲演奏の音だけは確実に鳴らす。それ以外は水面へ波を注入。
+      // バー外: 曲演奏の音だけは確実に鳴らす。それ以外（外れた雨）は静かに消える。
       if (override !== undefined) {
         playNote(override, x)
-        return
       }
-      const [u, v] = worldToUv(x, z)
-      field.impacts.push({ u, v, strength: IMPACT_STRENGTH })
     },
-    [field],
+    [],
   )
 
   const handleSplashDone = useCallback((id: number) => {

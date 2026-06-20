@@ -28,6 +28,7 @@ export function Controls() {
   const [song, setSongState] = useState(settings.song)
   const [hasCustom, setHasCustom] = useState(settings.customMelody != null)
   const [drawing, setDrawing] = useState(false)
+  const [open, setOpen] = useState(true)
   const [scoreMsg, setScoreMsg] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -87,8 +88,26 @@ export function Controls() {
         }}
       />
 
-      {!drawing && (
+      {!drawing && !open && (
+        <button
+          className="controls-fab"
+          onClick={() => setOpen(true)}
+          aria-label="メニューを開く"
+        >
+          ⚙
+        </button>
+      )}
+
+      {!drawing && open && (
       <div className="controls">
+        <button
+          className="controls-close"
+          onClick={() => setOpen(false)}
+          aria-label="メニューを閉じる"
+        >
+          ×
+        </button>
+
         <button
           className={`control-toggle ${rainOn ? 'on' : ''}`}
           onClick={() => {

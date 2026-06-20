@@ -1,23 +1,18 @@
-import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Lightformer, OrbitControls, Sparkles } from '@react-three/drei'
 import { ACESFilmicToneMapping } from 'three'
 import { POND_HALF } from '../config'
 import { isMobile, quality } from '../util/quality'
-import { createWaterField } from '../water/waterField'
-import { WaterPlane } from '../water/WaterPlane'
-import { WaterSim } from '../water/WaterSim'
 import { RainSystem } from './RainSystem'
 import { Effects } from './Effects'
 
 /**
- * シーン全体。少し見下ろすカメラ、控えめな環境光＋ディレクショナルライト（影付き）、
- * オフラインでも効く Lightformer ベースの環境マップ（金属面の映り込み用）、
- * 水面、放置で動く水滴・波紋・鉄琴バー、そして後処理（Bloom/Vignette）。
+ * シーン全体。少し見下ろすカメラ、控えめな環境光＋ディレクショナルライト、
+ * オフラインでも効く Lightformer ベースの環境マップ（映り込み用）、月、霧、
+ * 放置で動く水滴・鉄琴バー、そして後処理（色調補正/Vignette）。
+ * （大きな水面プレーンは廃止し、暗い空間にバーと雨が浮かぶ構成）
  */
 export function Scene() {
-  const field = useMemo(() => createWaterField(quality.simRes), [])
-
   return (
     <Canvas
       shadows={quality.shadows}
@@ -58,9 +53,7 @@ export function Scene() {
         <meshBasicMaterial color="#eaf3ff" toneMapped={false} />
       </mesh>
 
-      <WaterSim field={field} />
-      <WaterPlane field={field} />
-      <RainSystem field={field} />
+      <RainSystem />
 
       {/* 水面の上に漂う微かな霧の粒子。premium な空気感を足す。 */}
       <Sparkles
