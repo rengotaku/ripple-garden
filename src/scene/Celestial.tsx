@@ -133,8 +133,16 @@ export function Celestial() {
           rotation={[p.axis ?? 0, 0, 0]}
         >
           <mesh>
-            <sphereGeometry args={[p.size, 24, 24]} />
-            <meshStandardMaterial color={p.color} roughness={0.85} metalness={0.1} />
+            <sphereGeometry args={[p.size, 32, 32]} />
+            {/* 太陽光で昼夜の境(陰影)が立つよう、環境フィルを抑える。暗側が潰れない程度に自発光。 */}
+            <meshStandardMaterial
+              color={p.color}
+              roughness={0.6}
+              metalness={0}
+              envMapIntensity={0.25}
+              emissive={p.color}
+              emissiveIntensity={0.08}
+            />
           </mesh>
           {p.ring && (
             <mesh rotation={[Math.PI / 2, 0, 0]}>
