@@ -24,7 +24,7 @@ import { downloadScore } from '../score/downloadScore'
 import { strokesToMelody, type Stroke } from '../score/drawMelody'
 import { exportComposition, importComposition } from '../score/melodyIO'
 import {
-  ArrowDownToLine,
+  ChevronsDown,
   CircleDot,
   Download,
   FileMusic,
@@ -173,7 +173,7 @@ export function Controls() {
                 <div key={l.id} className={`layer-row ${l.enabled ? '' : 'off'}`}>
                   <div className="layer-head">
                     <span className="layer-dot" style={{ background: l.color }} />
-                    <span className="layer-name">落書き {i + 1}</span>
+                    <span className="layer-name">{i + 1}</span>
                     <button className="layer-btn" onClick={() => startEdit(l.id)} aria-label="編集">
                       <Pencil size={15} />
                     </button>
@@ -186,7 +186,7 @@ export function Controls() {
                   </div>
                   <label className="layer-tempo" title="この落書きの落下速度">
                     <span className="layer-tempo-icon">
-                      <ArrowDownToLine size={14} />
+                      <ChevronsDown size={14} />
                     </span>
                     <input
                       type="range"
@@ -211,11 +211,22 @@ export function Controls() {
           </button>
 
           <div className="control-iorow">
-            <button className="control-mini" disabled={!layers.length} onClick={() => exportComposition(getLayers())}>
-              <Download size={14} /> エクスポート
+            <button
+              className="control-ico"
+              disabled={!layers.length}
+              onClick={() => exportComposition(getLayers())}
+              aria-label="エクスポート"
+              title="エクスポート"
+            >
+              <Download size={16} />
             </button>
-            <button className="control-mini" onClick={() => fileInput.current?.click()}>
-              <Upload size={14} /> インポート
+            <button
+              className="control-ico"
+              onClick={() => fileInput.current?.click()}
+              aria-label="インポート"
+              title="インポート"
+            >
+              <Upload size={16} />
             </button>
           </div>
         </div>
@@ -281,7 +292,7 @@ export function Controls() {
           </label>
 
           <label className="control-row">
-            <span className="control-label"><ArrowDownToLine size={14} /> 落下速度</span>
+            <span className="control-label"><ChevronsDown size={14} /> 落下速度</span>
             <input
               type="range"
               min={0}
