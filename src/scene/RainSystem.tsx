@@ -95,21 +95,21 @@ export function RainSystem({ field }: { field: WaterField }) {
   const focusRef = useRef(focusXHalf)
   focusRef.current = focusXHalf
 
-  const dropGeometry = useMemo(() => new SphereGeometry(0.06, 16, 16), [])
+  const dropGeometry = useMemo(() => new SphereGeometry(0.065, 18, 18), [])
   const dropMaterial = useMemo(
     () =>
       new MeshPhysicalMaterial({
-        color: '#dff3ff',
-        roughness: 0.02,
+        // 透明な水滴: しっかり透ける低不透明度＋クリアコートのつや。
+        // 発光なし（“光る玉”に見えるのを防ぐ）。背景が透けて見えるので透明感が出る。
+        color: '#cfeeff',
+        roughness: 0.04,
         metalness: 0,
         transparent: true,
-        opacity: 0.78,
-        ior: 1.33,
-        clearcoat: 1,
-        clearcoatRoughness: 0,
-        envMapIntensity: 2.2,
-        emissive: '#4aa0d8',
-        emissiveIntensity: 0.25,
+        opacity: 0.34, // 低めでしっかり透ける
+        ior: 1.33, // 水の屈折率（フレネルのエッジ感）
+        clearcoat: 1, // 表面のつや（ハイライトで雫だと分かる）
+        clearcoatRoughness: 0.03,
+        envMapIntensity: 1.0,
       }),
     [],
   )
