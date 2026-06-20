@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { Trail } from '@react-three/drei'
 import type { BufferGeometry, Material, Mesh } from 'three'
 import { DROP_START_Y, levelToGravity } from '../config'
 import { settings } from '../state/settings'
@@ -19,8 +20,8 @@ export type DropProps = {
 
 /**
  * 落ちる星 1 つ。重力で落下し、着地面（波紋面 or バー天面）に着いたら onLand を 1 度だけ呼ぶ。
- * 落下中は速度に応じて縦に伸びた軌跡の形になる（モーションストレッチ）。
- * 位置・スケールは ref で直接更新し、毎フレームの React 再レンダリングを避ける。
+ * 落下中は drei の Trail で「流星のなめらかな光跡」を引く（引き伸ばしではなく実トレイル）。
+ * 位置は ref で直接更新し、毎フレームの React 再レンダリングを避ける。
  */
 export function Drop({ id, x, z, startY, landY, geometry, material, onLand }: DropProps) {
   const initialY = startY ?? DROP_START_Y
@@ -36,11 +37,6 @@ export function Drop({ id, x, z, startY, landY, geometry, material, onLand }: Dr
     velocity.current += levelToGravity(settings.fallSpeed) * delta
     mesh.position.y -= velocity.current * delta
 
-    // 落下中の星は円ではなく細い縦筋（軌跡）に。速いほど細長く、遅いほど丸く。
-    const stretch = Math.min(6.5, 1 + velocity.current * 0.18)
-    const thin = Math.min(1, 0.7 / Math.sqrt(stretch))
-    mesh.scale.set(thin, stretch, thin)
-
     if (mesh.position.y <= landY) {
       landed.current = true
       onLand(id, x, z)
@@ -48,6 +44,8 @@ export function Drop({ id, x, z, startY, landY, geometry, material, onLand }: Dr
   })
 
   return (
-    <mesh ref={ref} position={[x, initialY, z]} geometry={geometry} material={material} castShadow />
+    <Trail width={1.4} length={5} color={'#dff2ff'} decay={1.4} attenuation={(w) => w * w}>
+      <mesh ref={ref} position={[x, initialY, z]} geometry={geometry} material={material} />
+    </Trail>
   )
 }

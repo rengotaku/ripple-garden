@@ -160,7 +160,7 @@ export function RainSystem() {
     noteOverrides.current.set(id, note)
     setDrops((prev) => [
       ...prev,
-      { id, x: bar.position[0], z: bar.position[2], landY: barTop, startY: barTop + 1.0 },
+      { id, x: bar.position[0], z: bar.position[2], landY: barTop, startY: barTop + 4.0 },
     ])
   }
 

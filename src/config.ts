@@ -10,7 +10,7 @@ export const WATER_LEVEL = 0
 export const POND_HALF = 5
 
 /** 星の落下開始高さ。高いほど長く落ちて軌跡（流星の筋）が長くなる。 */
-export const DROP_START_Y = 22
+export const DROP_START_Y = 32
 
 /** 重力加速度（units/sec^2）。飛沫など固定用途のベース値。 */
 export const GRAVITY = 9.0

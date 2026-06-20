@@ -15,8 +15,8 @@ const ORBIT_SPEED = 0.06
 function fallToSkyRate(v: number): number {
   return 0.2 + Math.max(0, Math.min(1, v)) * 1.6 // v=0:×0.2 / 0.5:×1 / 1:×1.8
 }
-const SUN_R = 14
-const MOON_R = 9
+const SUN_R = 20
+const MOON_R = 14
 const TILT = 0.5
 
 type Planet = {
@@ -32,11 +32,11 @@ type Planet = {
   axis?: number
 }
 const PLANETS: Planet[] = [
-  { r: 5.5, speed: 0.45, size: 0.26, color: '#b8794f', tilt: 0.25, phase: 0.0, axis: 0.1 },
-  { r: 7.2, speed: 0.34, size: 0.46, color: '#4f8fc9', tilt: 0.55, phase: 1.3, axis: 0.4 },
-  { r: 9.4, speed: 0.25, size: 0.66, color: '#e0c98a', tilt: 0.4, phase: 2.6, ring: '#e6d6a8', axis: 0.47 },
-  { r: 11.5, speed: 0.18, size: 0.38, color: '#9f7fd8', tilt: 0.7, phase: 4.1, axis: 0.9 },
-  { r: 13.5, speed: 0.13, size: 0.52, color: '#5fb890', tilt: 0.32, phase: 5.4, axis: 0.2 },
+  { r: 11, speed: 0.45, size: 0.34, color: '#b8794f', tilt: 0.25, phase: 0.0, axis: 0.1 },
+  { r: 15, speed: 0.34, size: 0.6, color: '#4f8fc9', tilt: 0.55, phase: 1.3, axis: 0.4 },
+  { r: 19, speed: 0.25, size: 0.86, color: '#e0c98a', tilt: 0.4, phase: 2.6, ring: '#e6d6a8', axis: 0.47 },
+  { r: 23, speed: 0.18, size: 0.5, color: '#9f7fd8', tilt: 0.7, phase: 4.1, axis: 0.9 },
+  { r: 27, speed: 0.13, size: 0.68, color: '#5fb890', tilt: 0.32, phase: 5.4, axis: 0.2 },
 ]
 
 // 音板（原点＝地球の位置）を中心に周回する。
