@@ -37,12 +37,12 @@ export function WaterPlane({ field }: { field: WaterField }) {
 
   const material = useMemo(() => {
     const mat = new MeshStandardMaterial({
-      // 鏡面反射を抑えたソフトな水面（飽和して白飛びしないように）。
-      // さざ波は変位＋ライトの陰影で見せる。
-      color: new Color('#102f45'),
-      roughness: 0.32,
-      metalness: 0.25,
-      envMapIntensity: 0.5,
+      // 拡散主体の水面（鏡面反射ほぼ無し）。どれだけ波立っても眩しい反射を出さないので
+      // 白飛びしない。さざ波は頂点変位＋ディレクショナルライトの陰影で見せる。
+      color: new Color('#123349'),
+      roughness: 0.6,
+      metalness: 0.0,
+      envMapIntensity: 0.2,
       side: DoubleSide,
       transparent: true,
       opacity: 0.95,

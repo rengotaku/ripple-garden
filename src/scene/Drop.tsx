@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { BufferGeometry, Material, Mesh } from 'three'
-import { DROP_START_Y, GRAVITY } from '../config'
+import { DROP_START_Y, levelToGravity } from '../config'
+import { settings } from '../state/settings'
 
 export type DropProps = {
   id: number
@@ -28,12 +29,14 @@ export function Drop({ id, x, z, landY, geometry, material, onLand }: DropProps)
     const mesh = ref.current
     if (!mesh || landed.current) return
 
-    velocity.current += GRAVITY * delta
+    // 落下速度スライダーに応じた重力（飛行中の雫もリアルタイムに反映）。
+    velocity.current += levelToGravity(settings.fallSpeed) * delta
     mesh.position.y -= velocity.current * delta
 
-    // 速度が上がるほど少し縦長の雫に（やり過ぎない程度）。
-    const stretch = Math.min(1.5, 1 + velocity.current * 0.045)
-    mesh.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch))
+    // 落下中の雨は円ではなく縦に伸びた筋になる。速いほど細長く、遅いほど丸く。
+    const stretch = Math.min(5, 1 + velocity.current * 0.14)
+    const thin = Math.min(1, 0.85 / Math.sqrt(stretch))
+    mesh.scale.set(thin, stretch, thin)
 
     if (mesh.position.y <= landY) {
       landed.current = true

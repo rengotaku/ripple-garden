@@ -12,8 +12,16 @@ export const POND_HALF = 5
 /** 水滴の落下開始高さ。 */
 export const DROP_START_Y = 6
 
-/** 重力加速度（units/sec^2）。見栄え優先の値。 */
+/** 重力加速度（units/sec^2）。飛沫など固定用途のベース値。 */
 export const GRAVITY = 9.0
+
+/** 落下速度スライダー（0..1）→ 重力。小さいほどゆっくり夢のように落ちる。 */
+const MIN_GRAVITY = 2.5
+const MAX_GRAVITY = 17
+export function levelToGravity(level: number): number {
+  const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
+  return MIN_GRAVITY + (MAX_GRAVITY - MIN_GRAVITY) * clamp01(level)
+}
 
 /** 水滴生成間隔のゆらぎ（秒）。min〜max の一様乱数で次の滴までの間隔を決める。
  *  しっかり雨が降っていて、バーにも頻繁に当たって音が鳴るくらいの密度。 */
@@ -45,8 +53,8 @@ export const WAVE_DAMPING = 0.994
 /** 高さ → 頂点変位のスケール（ワールド単位）。 */
 export const WATER_DISP_SCALE = 0.2
 
-/** 高さ勾配 → 法線の強さ（映り込みの歪み量）。強すぎると飽和時に眩しく白飛びするので控えめ。 */
-export const WATER_NORMAL_STRENGTH = 1.55
+/** 高さ勾配 → 法線の強さ。拡散水面なので強めにしてもOK（陰影でさざ波がはっきり出る）。 */
+export const WATER_NORMAL_STRENGTH = 2.4
 
 /** 着水時に水面へ与える波の強さ（通常／バー命中）。雨が密＆集中しても飽和しないよう控えめ。 */
 export const IMPACT_STRENGTH = 0.22

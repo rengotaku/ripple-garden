@@ -10,7 +10,7 @@ export type XylophoneBarProps = {
 }
 
 const GLOW_COLOR = new Color('#ffeeb0')
-const GLOW_DECAY = 3.5 // 秒で減衰（短めの閃光に）
+const GLOW_DECAY = 4.5 // 秒で減衰（短い閃光に）
 
 /**
  * マリンバ風の鉄琴バー 1 本。着水のタイミングからの経過時間に応じて
@@ -26,8 +26,8 @@ export function XylophoneBar({ bar, lastHitRef }: XylophoneBarProps) {
     const since = state.clock.elapsedTime - lastHitRef.current
     const glow = Math.max(0, 1 - since * GLOW_DECAY)
     mat.emissive.copy(GLOW_COLOR).multiplyScalar(glow)
-    // 多数のバーが同時に光ると Bloom が飽和しやすいので発光ピークは控えめに。
-    mat.emissiveIntensity = glow * 1.1
+    // Bloom 不採用のため発光自体で命中を見せる（多数同時でも白飛びしない）。
+    mat.emissiveIntensity = glow * 1.5
   })
 
   return (

@@ -10,10 +10,16 @@ export const settings = {
   autoSlide: false,
   /** 音域の幅 0..1（スライダー）。小さいほど本数が少なく狭い音域。 */
   rangeLevel: 0.64,
+  /** 落下速度 0..1（スライダー）。小さいほどゆっくり落ちる。 */
+  fallSpeed: 0.5,
 }
 
 export function setRain(v: number): void {
   settings.rain = Math.max(0, Math.min(1, v))
+}
+
+export function setFallSpeed(v: number): void {
+  settings.fallSpeed = Math.max(0, Math.min(1, v))
 }
 
 export function setAutoSlide(v: boolean): void {

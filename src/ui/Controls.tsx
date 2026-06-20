@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { isMuted, setMuted } from '../audio/synth'
-import { settings, setAutoSlide, setRain, setRangeLevel } from '../state/settings'
+import { settings, setAutoSlide, setFallSpeed, setRain, setRangeLevel } from '../state/settings'
 import { levelToCount } from '../config'
 import { downloadScore } from '../score/downloadScore'
 
-/** 右下の小さな操作パネル。雨量・音域スライダー・自動スライド・楽譜DL・ミュート。 */
+/** 右下の小さな操作パネル。雨量・音域・落下速度スライダー・自動スライド・楽譜DL・ミュート。 */
 export function Controls() {
   const [mute, setMute] = useState(isMuted())
   const [rain, setRainState] = useState(settings.rain)
   const [range, setRangeState] = useState(settings.rangeLevel)
+  const [fall, setFallState] = useState(settings.fallSpeed)
   const [slide, setSlide] = useState(settings.autoSlide)
   const [scoreMsg, setScoreMsg] = useState<string | null>(null)
 
@@ -53,6 +54,22 @@ export function Controls() {
             const v = Number(e.target.value)
             setRangeLevel(v)
             setRangeState(v)
+          }}
+        />
+      </label>
+
+      <label className="control-row">
+        <span className="control-label">💧 落下速度</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={fall}
+          onChange={(e) => {
+            const v = Number(e.target.value)
+            setFallSpeed(v)
+            setFallState(v)
           }}
         />
       </label>

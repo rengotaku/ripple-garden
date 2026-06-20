@@ -1,27 +1,21 @@
 import {
   EffectComposer,
-  Bloom,
   BrightnessContrast,
   HueSaturation,
   Vignette,
 } from '@react-three/postprocessing'
-import { KernelSize } from 'postprocessing'
 
 /**
  * 静かな夜の水面らしい雰囲気のための後処理。
- * 発光（鉄琴バー／着水の光）を Bloom で柔らかく滲ませ、Vignette で周辺を落として
- * 視線を中央へ集める。重すぎない控えめな設定。
+ * 色調補正＋Vignette で落ち着いた夜の質感に。
+ *
+ * 注: Bloom は、雨がバーに集中して多数のバーが同時に発光した瞬間や、波立った
+ * 水面の輝度が偶発的にしきい値を越えたときに画面全体が白飛びする不具合があったため
+ * 採用していない（発光は素材自体の emissive と月の明るさで十分見える）。
  */
 export function Effects() {
   return (
     <EffectComposer multisampling={4}>
-      <Bloom
-        intensity={0.45}
-        luminanceThreshold={0.72}
-        luminanceSmoothing={0.9}
-        kernelSize={KernelSize.LARGE}
-        mipmapBlur
-      />
       {/* 夜の水面らしい、ややシアン寄り・低彩度の落ち着いた色調へ。 */}
       <HueSaturation saturation={-0.08} />
       <BrightnessContrast brightness={-0.03} contrast={0.09} />
