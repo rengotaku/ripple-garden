@@ -100,10 +100,11 @@ function makeRowBars(notes: readonly string[]): BarDef[] {
   const spread = spacing * (c - 1)
   return notes.map((note, i) => {
     const frac = c > 1 ? i / (c - 1) : 0
+    // 板は長め（奥行 Z）。低音ほど長い。
     return {
       id: i,
-      position: [-spread / 2 + spacing * i, BAR_BASE_Y, 0.4] as const,
-      size: [spacing * 0.82, 0.18, 1.25 - 0.7 * frac] as const,
+      position: [-spread / 2 + spacing * i, BAR_BASE_Y, 0.3] as const,
+      size: [spacing * 0.82, 0.18, 2.0 - 0.8 * frac] as const,
       rotationY: 0,
       note,
       color: `hsl(${hueOf(frac)}, 55%, 62%)`,
@@ -122,7 +123,7 @@ function makeCircleBars(notes: readonly string[]): BarDef[] {
   return notes.map((note, i) => {
     const frac = c > 1 ? i / (c - 1) : 0
     const theta = (i / c) * Math.PI * 2
-    const depth = 1.1 - 0.5 * frac
+    const depth = 1.7 - 0.7 * frac // 長め
     return {
       id: i,
       position: [Math.sin(theta) * radius, BAR_BASE_Y, Math.cos(theta) * radius] as const,

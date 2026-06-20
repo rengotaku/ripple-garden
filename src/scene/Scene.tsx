@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Lightformer, OrbitControls, Sparkles } from '@react-three/drei'
 import { ACESFilmicToneMapping } from 'three'
-import { POND_HALF, SIM_RES } from '../config'
+import { POND_HALF } from '../config'
+import { isMobile, quality } from '../util/quality'
 import { createWaterField } from '../water/waterField'
 import { WaterPlane } from '../water/WaterPlane'
 import { WaterSim } from '../water/WaterSim'
@@ -15,14 +16,14 @@ import { Effects } from './Effects'
  * 水面、放置で動く水滴・波紋・鉄琴バー、そして後処理（Bloom/Vignette）。
  */
 export function Scene() {
-  const field = useMemo(() => createWaterField(SIM_RES), [])
+  const field = useMemo(() => createWaterField(quality.simRes), [])
 
   return (
     <Canvas
-      shadows
-      dpr={[1, 2]}
+      shadows={quality.shadows}
+      dpr={quality.dpr}
       camera={{ position: [0, 6, 9], fov: 45 }}
-      gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      gl={{ antialias: !isMobile, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
     >
       <color attach="background" args={['#0a131d']} />
       <fog attach="fog" args={['#0a131d', 13, 30]} />
@@ -31,7 +32,7 @@ export function Scene() {
       <directionalLight
         position={[5, 9, 4]}
         intensity={1.1}
-        castShadow
+        castShadow={quality.shadows}
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0004}
@@ -63,7 +64,7 @@ export function Scene() {
 
       {/* 水面の上に漂う微かな霧の粒子。premium な空気感を足す。 */}
       <Sparkles
-        count={60}
+        count={quality.sparkles}
         scale={[POND_HALF * 2, 3.5, POND_HALF * 2]}
         position={[0, 1.4, 0]}
         size={2.4}

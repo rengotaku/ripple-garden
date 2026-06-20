@@ -4,6 +4,7 @@ import {
   HueSaturation,
   Vignette,
 } from '@react-three/postprocessing'
+import { quality } from '../util/quality'
 
 /**
  * 静かな夜の水面らしい雰囲気のための後処理。
@@ -15,7 +16,7 @@ import {
  */
 export function Effects() {
   return (
-    <EffectComposer multisampling={4}>
+    <EffectComposer multisampling={quality.multisampling}>
       {/* 夜の水面らしい、ややシアン寄り・低彩度の落ち着いた色調へ。 */}
       <HueSaturation saturation={-0.08} />
       <BrightnessContrast brightness={-0.03} contrast={0.09} />

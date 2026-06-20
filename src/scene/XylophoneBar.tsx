@@ -1,6 +1,7 @@
 import { useMemo, useRef, type MutableRefObject } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Color, type MeshStandardMaterial } from 'three'
+import { RoundedBox } from '@react-three/drei'
+import { Color, type MeshPhysicalMaterial } from 'three'
 import type { BarDef } from '../config'
 
 export type XylophoneBarProps = {
@@ -13,12 +14,14 @@ const GLOW_COLOR = new Color('#ffeeb0')
 const GLOW_DECAY = 4.5 // 秒で減衰（短い閃光に）
 
 /**
- * マリンバ風の鉄琴バー 1 本。着水のタイミングからの経過時間に応じて
- * emissive が立ち上がり徐々に収まる（Bloom で柔らかく光る）。
+ * マリンバ風の鉄琴バー 1 本。角を丸めた箱（RoundedBox）＋マットな木質＋うっすら艶の
+ * マテリアルにして、カクカクしたポリゴン感を抑える。命中時は emissive が立ち上がり徐々に収まる。
  */
 export function XylophoneBar({ bar, lastHitRef }: XylophoneBarProps) {
-  const matRef = useRef<MeshStandardMaterial>(null)
+  const matRef = useRef<MeshPhysicalMaterial>(null)
   const baseColor = useMemo(() => new Color(bar.color), [bar.color])
+  // 角の丸み。板の高さに対して控えめに（潰れない範囲で）。
+  const radius = Math.min(0.06, bar.size[1] * 0.45)
 
   useFrame((state) => {
     const mat = matRef.current
@@ -31,14 +34,24 @@ export function XylophoneBar({ bar, lastHitRef }: XylophoneBarProps) {
   })
 
   return (
-    <mesh position={[...bar.position]} rotation={[0, bar.rotationY, 0]} castShadow receiveShadow>
-      <boxGeometry args={[...bar.size]} />
-      <meshStandardMaterial
+    <RoundedBox
+      args={[...bar.size]}
+      radius={radius}
+      smoothness={4}
+      position={[...bar.position]}
+      rotation={[0, bar.rotationY, 0]}
+      castShadow
+      receiveShadow
+    >
+      <meshPhysicalMaterial
         ref={matRef}
         color={baseColor}
-        roughness={0.3}
-        metalness={0.65}
+        roughness={0.45}
+        metalness={0.1}
+        clearcoat={0.6}
+        clearcoatRoughness={0.35}
+        envMapIntensity={0.6}
       />
-    </mesh>
+    </RoundedBox>
   )
 }

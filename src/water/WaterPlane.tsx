@@ -11,26 +11,26 @@ import {
 } from 'three'
 import {
   POND_HALF,
-  SIM_RES,
   WATER_DISP_SCALE,
   WATER_LEVEL,
   WATER_NORMAL_STRENGTH,
 } from '../config'
+import { quality } from '../util/quality'
 import type { WaterField } from './waterField'
 
 /**
  * 高さ場テクスチャから頂点を変位させ、勾配から法線を再計算する水面。
  * MeshStandardMaterial を onBeforeCompile でパッチし、PBR の映り込み（環境マップ）と
- * Bloom/トーンマッピングにそのまま乗せる。これで「水面そのものが波打つ」表現になる。
+ * トーンマッピングにそのまま乗せる。これで「水面そのものが波打つ」表現になる。
  */
 
 const PLANE_SIZE = POND_HALF * 2
-const SEGMENTS = 200
+const SEGMENTS = quality.waterSegments
 
 export function WaterPlane({ field }: { field: WaterField }) {
   const uniforms = useRef<{ [k: string]: IUniform }>({
     uHeight: { value: null as Texture | null },
-    uTexel: { value: new Vector2(1 / SIM_RES, 1 / SIM_RES) },
+    uTexel: { value: new Vector2(1 / field.resolution, 1 / field.resolution) },
     uDisp: { value: WATER_DISP_SCALE },
     uNormalStrength: { value: WATER_NORMAL_STRENGTH },
   })
