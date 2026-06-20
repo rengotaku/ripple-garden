@@ -180,7 +180,7 @@ export function RainSystem() {
       if (st.timer <= 0) {
         const ev = layer.notes[st.index % layer.notes.length]
         for (const n of ev.notes) spawnMelodyDrop(n) // 1 ステップに複数音なら和音として同時発音
-        st.timer += ev.beats * noteSec(layer.tempo, settings.tempo) // 旋律ごと×全体の時の流れ（描画とは別軸）
+        st.timer += ev.beats * noteSec(layer.tempo, settings.fallSpeed) // 旋律ごと×全体の落下速度（場全体の速さ）
         st.index = (st.index + 1) % layer.notes.length
       }
     }

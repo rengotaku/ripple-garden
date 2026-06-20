@@ -7,7 +7,6 @@ import {
   setRain,
   setRainOn,
   setRangeLevel,
-  setTempo,
   setVolume,
 } from '../state/settings'
 import {
@@ -55,7 +54,6 @@ export function Controls() {
   const [range, setRangeState] = useState(settings.rangeLevel)
   const [fall, setFallState] = useState(settings.fallSpeed)
   const [volume, setVolumeUi] = useState(settings.volume)
-  const [tempo, setTempoUi] = useState(settings.tempo)
   const [circle, setCircle] = useState(settings.barShape === 'circle')
   const [drawing, setDrawing] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -295,22 +293,6 @@ export function Controls() {
                 const v = Number(e.target.value)
                 setFallSpeed(v)
                 setFallState(v)
-              }}
-            />
-          </label>
-
-          <label className="control-row">
-            <span className="control-label"><Hourglass size={14} /> 時の流れ</span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={tempo}
-              onChange={(e) => {
-                const v = Number(e.target.value)
-                setTempo(v)
-                setTempoUi(v)
               }}
             />
           </label>

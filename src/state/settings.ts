@@ -12,12 +12,14 @@ export const settings = {
   rainOn: false,
   /** 音域の幅 0..1（スライダー）。小さいほど本数が少なく狭い音域。 */
   rangeLevel: 0.64,
-  /** 落下速度 0..1（スライダー）。小さいほどゆっくり落ちる。 */
+  /**
+   * 落下速度 0..1（スライダー）。場全体の「速さ」を一括で支配する。
+   * 星の落下・天体の周回に加え、なぞって作曲の旋律マスターテンポも兼ねる
+   * （個別の速さは layer.tempo）。小さいほどゆっくり、星停止中でも旋律の速さに効く。
+   */
   fallSpeed: 0.5,
   /** マスター音量 0..1（スライダー）。0 で無音。既定 0.8 ≒ 従来の -10dB。 */
   volume: 0.8,
-  /** 演奏速度（テンポ）0..1。描画とは別軸。既定 0.5 ≒ 従来の 0.36 秒/音。 */
-  tempo: 0.5,
   /** バーの配置（一列 / 円形）。 */
   barShape: 'row' as BarShape,
 }
@@ -36,10 +38,6 @@ export function setFallSpeed(v: number): void {
 
 export function setVolume(v: number): void {
   settings.volume = Math.max(0, Math.min(1, v))
-}
-
-export function setTempo(v: number): void {
-  settings.tempo = Math.max(0, Math.min(1, v))
 }
 
 // --- レイアウト（音域の幅・バー配置）は購読可能（変えると板を作り直すため） ---
