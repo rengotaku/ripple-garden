@@ -23,36 +23,18 @@ body {
 }
 
 /* 音声解禁前の小さな案内（右上にふわっと） */
-.start-hint-toast {
+.app-title {
   position: fixed;
-  top: 1.1rem;
-  right: 1.2rem;
-  z-index: 10;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.7rem;
-  font-size: 0.74rem;
+  top: 1rem;
+  left: 1.1rem;
+  z-index: 8;
+  font-size: 0.95rem;
   font-weight: 300;
-  color: #e8f4ff;
-  background: rgba(14, 28, 42, 0.6);
-  border: 1px solid rgba(120, 170, 200, 0.25);
-  border-radius: 999px;
-  backdrop-filter: blur(6px);
+  letter-spacing: 0.08em;
+  color: rgba(220, 235, 250, 0.4);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
   pointer-events: none;
   user-select: none;
-  animation: toast-in 0.9s ease-out both, pulse 2.6s ease-in-out 0.9s infinite;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-0.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .controls-fab {
@@ -346,6 +328,8 @@ body {
 
 .control-mini {
   flex: 1;
+  min-width: 0;
+  white-space: nowrap;
   border: 1px solid rgba(120, 170, 200, 0.3);
   border-radius: 0.5rem;
   background: rgba(20, 38, 54, 0.5);
@@ -422,16 +406,6 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 0.75;
-  }
 }
 
 /* ===== 落書き編集：ペン/消しゴム ===== */

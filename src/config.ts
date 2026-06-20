@@ -114,21 +114,39 @@ export function poolNoteAtIn(pool: readonly string[], frac: number): string {
   return pool[Math.round(f * (pool.length - 1))]
 }
 
-const BAR_BASE_Y = WATER_LEVEL + 0.09
 const hueOf = (frac: number) => Math.round(18 + 267 * frac)
 
-/** 一列レイアウト。低音(左)→高音(右)、低音ほど長い板。横幅は本数で自動。 */
+/** 板の厚み（Y）。フラットをやめて厚みのある立体にする。 */
+const BAR_THICK_MIN = 0.34
+const BAR_THICK_MAX = 0.92
+
+/**
+ * 板ごとの厚み。隣どうしで高さが食い違う「段差」を出す（低→高に整列する階段にはしない）。
+ * index から決まる擬似ランダムな 5 段で、ゴツゴツした起伏になるよう散らす。
+ */
+function barThickness(i: number): number {
+  const step = ((i * 7) % 5) / 4 // 0, 0.5, 1, 0.25, 0.75 … と段差が散らばる
+  return BAR_THICK_MIN + step * (BAR_THICK_MAX - BAR_THICK_MIN)
+}
+
+/** 厚みのある板を水面に planted（底を水面に合わせる）したときの中心 Y。 */
+function barCenterY(thickness: number): number {
+  return WATER_LEVEL + thickness / 2
+}
+
+/** 一列レイアウト。低音(左)→高音(右)、低音ほど長い板。横幅は本数で自動。厚みは段差で起伏。 */
 function makeRowBars(notes: readonly string[]): BarDef[] {
   const c = notes.length
   const spacing = Math.min(SPACING_MAX, MAX_SPAN / Math.max(1, c - 1))
   const spread = spacing * (c - 1)
   return notes.map((note, i) => {
     const frac = c > 1 ? i / (c - 1) : 0
-    // 板は長め（奥行 Z）。低音ほど長い。
+    const thick = barThickness(i)
+    // 板は長め（奥行 Z）。低音ほど長い。厚みは段差で起伏（底は水面に揃える）。
     return {
       id: i,
-      position: [-spread / 2 + spacing * i, BAR_BASE_Y, 0.1] as const,
-      size: [spacing * 0.82, 0.18, 2.9 - 1.0 * frac] as const,
+      position: [-spread / 2 + spacing * i, barCenterY(thick), 0.1] as const,
+      size: [spacing * 0.82, thick, 2.9 - 1.0 * frac] as const,
       rotationY: 0,
       note,
       color: `hsl(${hueOf(frac)}, 55%, 62%)`,
@@ -149,10 +167,11 @@ function makeCircleBars(notes: readonly string[]): BarDef[] {
   return notes.map((note, i) => {
     const frac = c > 1 ? i / (c - 1) : 0
     const theta = (i / c) * Math.PI * 2
+    const thick = barThickness(i)
     return {
       id: i,
-      position: [Math.sin(theta) * radius, BAR_BASE_Y, Math.cos(theta) * radius] as const,
-      size: [tangential, 0.18, depth] as const,
+      position: [Math.sin(theta) * radius, barCenterY(thick), Math.cos(theta) * radius] as const,
+      size: [tangential, thick, depth] as const,
       rotationY: theta,
       note,
       color: `hsl(${hueOf(frac)}, 55%, 62%)`,

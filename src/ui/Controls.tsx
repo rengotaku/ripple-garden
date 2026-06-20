@@ -164,7 +164,7 @@ export function Controls() {
           </button>
 
           <button className="control-toggle primary" onClick={() => setDrawing(true)}>
-            <Pencil size={ICON} /> 星を落書きして作曲（落書きを追加）
+            <Pencil size={ICON} /> 星を落書き
           </button>
 
           {layers.length > 0 && (
