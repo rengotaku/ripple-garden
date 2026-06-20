@@ -98,6 +98,43 @@ body {
   cursor: pointer;
 }
 
+.draw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  cursor: crosshair;
+  background: rgba(8, 16, 26, 0.35);
+  touch-action: none;
+}
+
+.draw-hint {
+  position: fixed;
+  top: 1.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #e8f4ff;
+  font-size: 0.9rem;
+  font-weight: 300;
+  background: rgba(14, 28, 42, 0.6);
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.draw-cancel {
+  position: fixed;
+  top: 1.2rem;
+  right: 1.2rem;
+  border: 1px solid rgba(150, 190, 220, 0.4);
+  border-radius: 0.6rem;
+  background: rgba(20, 38, 54, 0.7);
+  color: #e8f4ff;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 .control-select {
   width: 100%;
   background: rgba(20, 38, 54, 0.6);
@@ -107,6 +144,27 @@ body {
   padding: 0.4rem 0.5rem;
   font-size: 0.78rem;
   cursor: pointer;
+}
+
+.control-iorow {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.control-mini {
+  flex: 1;
+  border: 1px solid rgba(120, 170, 200, 0.3);
+  border-radius: 0.5rem;
+  background: rgba(20, 38, 54, 0.5);
+  color: #cfe6f3;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.control-mini:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .control-toggle {

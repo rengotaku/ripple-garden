@@ -3,6 +3,8 @@
  * waterField と同様にミュータブルな小さなストアとして扱う。
  * 描画に影響する項目（音域の幅・バー配置）は購読 → React 再描画できるようにする。
  */
+import type { SongNote } from '../audio/songs'
+
 export type BarShape = 'row' | 'circle'
 
 export const settings = {
@@ -16,12 +18,18 @@ export const settings = {
   fallSpeed: 0.5,
   /** バーの配置（一列 / 円形）。 */
   barShape: 'row' as BarShape,
-  /** 演奏する曲の id（'' でランダム生成）。 */
+  /** 演奏する曲の id（'' でランダム生成、'custom' でなぞり作曲）。 */
   song: '',
+  /** なぞって作ったメロディ（'custom' 選択時に演奏）。 */
+  customMelody: null as SongNote[] | null,
 }
 
 export function setSong(id: string): void {
   settings.song = id
+}
+
+export function setCustomMelody(notes: SongNote[]): void {
+  settings.customMelody = notes
 }
 
 export function setRain(v: number): void {

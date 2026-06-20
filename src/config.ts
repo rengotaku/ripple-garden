@@ -72,6 +72,15 @@ const PENTATONIC_POOL = [
   'C6', 'D6', 'E6',
 ] as const
 
+/** なぞり作曲で使う音高プール（低→高）。線の縦位置をこの範囲にマップする。 */
+export const PITCH_POOL: readonly string[] = PENTATONIC_POOL
+
+/** 0(低)〜1(高) の比率からプールの音名を返す。 */
+export function poolNoteAt(frac: number): string {
+  const f = Math.max(0, Math.min(1, frac))
+  return PITCH_POOL[Math.round(f * (PITCH_POOL.length - 1))]
+}
+
 /** 音域スライダーで取りうるバー本数の範囲。 */
 export const MIN_BARS = 6
 export const MAX_BARS = 17
@@ -103,8 +112,8 @@ function makeRowBars(notes: readonly string[]): BarDef[] {
     // 板は長め（奥行 Z）。低音ほど長い。
     return {
       id: i,
-      position: [-spread / 2 + spacing * i, BAR_BASE_Y, 0.3] as const,
-      size: [spacing * 0.82, 0.18, 2.0 - 0.8 * frac] as const,
+      position: [-spread / 2 + spacing * i, BAR_BASE_Y, 0.1] as const,
+      size: [spacing * 0.82, 0.18, 2.9 - 1.0 * frac] as const,
       rotationY: 0,
       note,
       color: `hsl(${hueOf(frac)}, 55%, 62%)`,
@@ -118,12 +127,13 @@ function makeRowBars(notes: readonly string[]): BarDef[] {
  */
 function makeCircleBars(notes: readonly string[]): BarDef[] {
   const c = notes.length
-  const radius = Math.max(1.4, Math.min(3.6, 0.16 * c))
+  const radius = Math.max(1.7, Math.min(3.4, 0.2 * c))
   const tangential = Math.min(0.55, ((2 * Math.PI * radius) / c) * 0.82)
+  // 円形は全バー同じ長さにして、リングがガタつかないよう整列させる。
+  const depth = 1.9
   return notes.map((note, i) => {
     const frac = c > 1 ? i / (c - 1) : 0
     const theta = (i / c) * Math.PI * 2
-    const depth = 1.7 - 0.7 * frac // 長め
     return {
       id: i,
       position: [Math.sin(theta) * radius, BAR_BASE_Y, Math.cos(theta) * radius] as const,

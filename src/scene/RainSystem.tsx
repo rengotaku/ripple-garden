@@ -98,6 +98,7 @@ export function RainSystem({ field }: { field: WaterField }) {
   const elapsedRef = useRef(0)
   // 曲演奏の進行状態。
   const songIdRef = useRef('')
+  const melodyRef = useRef<unknown>(null) // 現在のメロディ配列の参照（差し替え検出用）
   const melodyIndex = useRef(0)
   const melodyTimer = useRef(0)
   // 曲演奏の雫が「正確に鳴らす音」を id ごとに保持（最寄りバーに落としつつ正音を発音）。
@@ -151,10 +152,19 @@ export function RainSystem({ field }: { field: WaterField }) {
 
     // --- 曲演奏モード（曲が選ばれている間はランダム雨を止め、メロディを雨で奏でる） ---
     const songId = settings.song
-    const song = songId ? SONGS[songId] : null
+    const song =
+      songId === 'custom'
+        ? settings.customMelody && settings.customMelody.length
+          ? { notes: settings.customMelody, tempo: 0.3 }
+          : null
+        : songId
+          ? SONGS[songId]
+          : null
     if (song) {
-      if (songIdRef.current !== songId) {
+      // 曲が変わった or なぞり直しでメロディ配列が差し替わったら先頭から。
+      if (songIdRef.current !== songId || melodyRef.current !== song.notes) {
         songIdRef.current = songId
+        melodyRef.current = song.notes
         melodyIndex.current = 0
         melodyTimer.current = 0
       }
