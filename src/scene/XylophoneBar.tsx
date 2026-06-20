@@ -46,14 +46,16 @@ export function XylophoneBar({ bar, lastHitRef }: XylophoneBarProps) {
       <meshPhysicalMaterial
         ref={matRef}
         color={baseColor}
-        roughness={0.16}
         metalness={0}
-        transmission={0.92}
-        thickness={0.8}
-        ior={1.35}
-        clearcoat={0.7}
-        clearcoatRoughness={0.25}
-        envMapIntensity={0.8}
+        roughness={0.12}
+        transmission={0.45}
+        thickness={0.5}
+        ior={1.45}
+        attenuationColor={baseColor}
+        attenuationDistance={0.6}
+        clearcoat={1}
+        clearcoatRoughness={0.08}
+        envMapIntensity={1}
         transparent
       />
     </RoundedBox>
