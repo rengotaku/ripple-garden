@@ -5,6 +5,9 @@ import {
   BARS,
   IMPACT_STRENGTH,
   POND_HALF,
+  RAIN_FOCUS_X_HALF,
+  RAIN_FOCUS_Z_CENTER,
+  RAIN_FOCUS_Z_HALF,
   SLIDE_AMP_X,
   SLIDE_AMP_Z,
   WATER_LEVEL,
@@ -24,7 +27,8 @@ type SplashState = { id: number; x: number; z: number; y: number }
 const MAX_RATE = 22
 
 const randRange = (min: number, max: number) => min + Math.random() * (max - min)
-const randPond = () => randRange(-POND_HALF * 0.95, POND_HALF * 0.95)
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
+const POND_EDGE = POND_HALF * 0.97
 
 /** 現在の雨量から次の滴までの間隔（秒）を決める。雨量 0 なら Infinity（生成しない）。 */
 function nextInterval(): number {
@@ -118,8 +122,17 @@ export function RainSystem({ field }: { field: WaterField }) {
         spawnTimer.current = 0.3 // 雨が止んでいる間は時々再チェック
       } else {
         spawnTimer.current = interval
-        const x = randPond()
-        const z = randPond()
+        // 雨はバー付近に集中（自動スライド時は中心がバー列に追従）。
+        const x = clamp(
+          slide.current.x + randRange(-RAIN_FOCUS_X_HALF, RAIN_FOCUS_X_HALF),
+          -POND_EDGE,
+          POND_EDGE,
+        )
+        const z = clamp(
+          slide.current.z + RAIN_FOCUS_Z_CENTER + randRange(-RAIN_FOCUS_Z_HALF, RAIN_FOCUS_Z_HALF),
+          -POND_EDGE,
+          POND_EDGE,
+        )
         const landY = landingYAt(x - slide.current.x, z - slide.current.z)
         setDrops((prev) => [...prev, { id: nextId.current++, x, z, landY }])
       }

@@ -56,6 +56,14 @@ export const IMPACT_STRENGTH_HIT = 0.5
 export const SLIDE_AMP_X = 1.8
 export const SLIDE_AMP_Z = 2.6
 
+/**
+ * 雨を降らせる範囲（バー付近に集中させる）。バー列を覆う矩形＋少しの余白。
+ * 自動スライド時はこの中心がバー列と一緒に動く。
+ */
+export const RAIN_FOCUS_X_HALF = 3.4
+export const RAIN_FOCUS_Z_CENTER = 0.4
+export const RAIN_FOCUS_Z_HALF = 1.7
+
 /** ワールド座標 (x,z) を水面テクスチャの uv に変換する。 */
 export function worldToUv(x: number, z: number): [number, number] {
   return [x / (POND_HALF * 2) + 0.5, z / (POND_HALF * 2) + 0.5]
