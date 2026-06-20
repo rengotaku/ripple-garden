@@ -87,6 +87,7 @@ export function Controls() {
         }}
       />
 
+      {!drawing && (
       <div className="controls">
         <button
           className={`control-toggle ${rainOn ? 'on' : ''}`}
@@ -211,6 +212,7 @@ export function Controls() {
           {mute ? '🔇' : '🔊'}
         </button>
       </div>
+      )}
     </>
   )
 }

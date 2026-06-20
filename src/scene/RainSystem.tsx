@@ -24,6 +24,7 @@ import {
 import { getLayoutSnapshot, settings, subscribeLayout } from '../state/settings'
 import { playNote } from '../audio/synth'
 import { SONGS, noteToMidi } from '../audio/songs'
+import { MELODY_STEP_SEC } from '../score/drawMelody'
 import type { WaterField } from '../water/waterField'
 import { Drop } from './Drop'
 import { Splash } from './Splash'
@@ -155,7 +156,7 @@ export function RainSystem({ field }: { field: WaterField }) {
     const song =
       songId === 'custom'
         ? settings.customMelody && settings.customMelody.length
-          ? { notes: settings.customMelody, tempo: 0.3 }
+          ? { notes: settings.customMelody, tempo: MELODY_STEP_SEC }
           : null
         : songId
           ? SONGS[songId]

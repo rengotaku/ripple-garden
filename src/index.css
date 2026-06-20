@@ -107,6 +107,23 @@ body {
   touch-action: none;
 }
 
+.guide-line {
+  stroke: rgba(150, 200, 230, 0.12);
+  stroke-width: 1;
+  stroke-dasharray: 6 8;
+}
+
+.guide-line-main {
+  stroke: rgba(170, 215, 245, 0.28);
+  stroke-width: 1;
+}
+
+.guide-text {
+  fill: rgba(200, 225, 245, 0.65);
+  font-size: 0.78rem;
+  font-weight: 300;
+}
+
 .draw-hint {
   position: fixed;
   top: 1.4rem;
