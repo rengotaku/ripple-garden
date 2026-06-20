@@ -64,9 +64,9 @@ export const SLIDE_AMP_Z = 2.6
  * どの順で当たっても不協和になりにくいペンタトニックなので、好きに広げてよい。
  */
 export const BAR_NOTES = [
-  'C3', 'D3', 'E3', 'G3', 'A3',
   'C4', 'D4', 'E4', 'G4', 'A4',
-  'C5', 'D5', 'E5',
+  'C5', 'D5', 'E5', 'G5', 'A5',
+  'C6', 'D6', 'E6',
 ] as const
 
 const BAR_COUNT = BAR_NOTES.length

@@ -30,7 +30,15 @@ const preview = spawn('npm', ['run', 'preview', '--', '--port', String(PORT), '-
 
 let exitCode = 0
 const errors = []
-const IGNORE = [/favicon/i, /AudioContext was not allowed/i, /The AudioContext/i]
+const IGNORE = [
+  /favicon/i,
+  /AudioContext was not allowed/i,
+  /The AudioContext/i,
+  /tonejs-instruments/i, // サンプル CDN（オフライン環境では取得失敗しても合成音にフォールバック）
+  /Failed to load resource/i,
+  /net::ERR/i,
+  /buffer/i,
+]
 
 try {
   await waitForServer(URL)
