@@ -116,9 +116,9 @@ export function poolNoteAtIn(pool: readonly string[], frac: number): string {
 
 const hueOf = (frac: number) => Math.round(18 + 267 * frac)
 
-/** 板の厚み（Y）。フラットをやめて厚みのある立体にする。低音と高音の高低差(段差)を強めにとる。 */
+/** 板の厚み（Y）。フラットをやめて厚みのある立体にする。低音と高音の高低差(段差)を大きくとる（レンジ約2倍）。 */
 const BAR_THICK_MIN = 0.22
-const BAR_THICK_MAX = 1.35
+const BAR_THICK_MAX = 2.48
 
 /**
  * 板ごとの厚み（段差）は音高ベース。低音ほど厚く（高く）、高音ほど薄く（低く）する。

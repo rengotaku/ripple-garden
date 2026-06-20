@@ -139,6 +139,8 @@ body {
   cursor: crosshair;
   background: rgba(8, 16, 26, 0.35);
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .guide-line {

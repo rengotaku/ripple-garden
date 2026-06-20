@@ -14,13 +14,13 @@ export type DrawOverlayProps = {
   initialStrokes?: NormPoint[][]
 }
 
-/** 縦の目安（音の高さ）のガイド線。 */
+/** 縦の目安（音の高さ）のガイド線。上下のUI（ツール/アクション）とかぶらないよう内側に余白をとる。 */
 const PITCH_GUIDES = [
-  { f: 0.06, label: '高音' },
+  { f: 0.12, label: '高音' },
   { f: 0.5, label: '中音' },
-  { f: 0.94, label: '低音' },
+  { f: 0.88, label: '低音' },
 ]
-const PITCH_LINES = [0.2, 0.35, 0.65, 0.8]
+const PITCH_LINES = [0.28, 0.4, 0.6, 0.72]
 
 /** 消しゴムでストロークを消すと判定する距離（px）。指/ポインタの近傍。 */
 const ERASE_THRESHOLD = 18
