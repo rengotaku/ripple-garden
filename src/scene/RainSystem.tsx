@@ -174,34 +174,38 @@ export function RainSystem() {
   useFrame((state, delta) => {
     elapsedRef.current = state.clock.elapsedTime
 
-    // 星停止に切り替わった瞬間、飛行中のアンビエント星を即クリア（曲の星=noteOverrides 持ちは残す）。
+    // 星停止に切り替わった瞬間、飛行中の星をすべて消す（アンビエントも演奏ドロップも）。
     if (prevRainOn.current && !settings.rainOn) {
-      setDrops((prev) => prev.filter((d) => noteOverrides.current.has(d.id)))
+      setDrops([])
+      noteOverrides.current.clear()
     }
     prevRainOn.current = settings.rainOn
 
-    // --- なぞって作曲のレイヤーを同時ループ再生 ---
-    const layers = getLayers()
-    const activeIds = new Set<number>()
-    for (const layer of layers) {
-      if (!layer.enabled || !layer.notes.length) continue
-      activeIds.add(layer.id)
-      let st = layerState.current.get(layer.id)
-      if (!st) {
-        st = { index: 0, timer: 0 }
-        layerState.current.set(layer.id, st)
+    // 星停止中は「全ての落下星」を止める：演奏ループも進めない（タイマー凍結＝再開で続きから）。
+    if (settings.rainOn) {
+      // --- なぞって作曲のレイヤーを同時ループ再生 ---
+      const layers = getLayers()
+      const activeIds = new Set<number>()
+      for (const layer of layers) {
+        if (!layer.enabled || !layer.notes.length) continue
+        activeIds.add(layer.id)
+        let st = layerState.current.get(layer.id)
+        if (!st) {
+          st = { index: 0, timer: 0 }
+          layerState.current.set(layer.id, st)
+        }
+        st.timer -= delta
+        if (st.timer <= 0) {
+          const ev = layer.notes[st.index % layer.notes.length]
+          for (const n of ev.notes) spawnMelodyDrop(n) // 1 ステップに複数音なら和音として同時発音
+          st.timer += ev.beats * noteSec(layer.tempo, settings.fallSpeed) // 旋律ごと×全体の落下速度（場全体の速さ）
+          st.index = (st.index + 1) % layer.notes.length
+        }
       }
-      st.timer -= delta
-      if (st.timer <= 0) {
-        const ev = layer.notes[st.index % layer.notes.length]
-        for (const n of ev.notes) spawnMelodyDrop(n) // 1 ステップに複数音なら和音として同時発音
-        st.timer += ev.beats * noteSec(layer.tempo, settings.fallSpeed) // 旋律ごと×全体の落下速度（場全体の速さ）
-        st.index = (st.index + 1) % layer.notes.length
+      // 無効化/削除されたレイヤーの状態は破棄。
+      for (const id of layerState.current.keys()) {
+        if (!activeIds.has(id)) layerState.current.delete(id)
       }
-    }
-    // 無効化/削除されたレイヤーの状態は破棄。
-    for (const id of layerState.current.keys()) {
-      if (!activeIds.has(id)) layerState.current.delete(id)
     }
 
     // --- ランダムに降る星（アンビエント。星の量/停止トグルで制御。レイヤーと同時に流れる） ---
