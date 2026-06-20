@@ -207,7 +207,7 @@ export function Controls() {
             disabled={!layers.length}
             onClick={() => setOverviewOpen(true)}
           >
-            <LayoutGrid size={ICON} /> すべての落書きを見る
+            <LayoutGrid size={ICON} /> すべて表示
           </button>
 
           <div className="control-iorow">

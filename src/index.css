@@ -352,6 +352,7 @@ body {
   padding: 0.45rem 0.5rem;
   font-size: 0.78rem;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
