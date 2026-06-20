@@ -6,6 +6,8 @@
 export const settings = {
   /** 雨量 0..1（スライダー）。0 で雨が止む。 */
   rain: 0.55,
+  /** 雨を降らせるか（停止トグル）。false で雨量に関わらず止まる。 */
+  rainOn: true,
   /** 鉄琴バーが自動でゆっくり動くモード。 */
   autoSlide: false,
   /** 音域の幅 0..1（スライダー）。小さいほど本数が少なく狭い音域。 */
@@ -24,6 +26,10 @@ export function setFallSpeed(v: number): void {
 
 export function setAutoSlide(v: boolean): void {
   settings.autoSlide = v
+}
+
+export function setRainOn(v: boolean): void {
+  settings.rainOn = v
 }
 
 // --- rangeLevel は購読可能（音域を変えると板を作り直すため） ---

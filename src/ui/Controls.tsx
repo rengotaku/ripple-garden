@@ -1,12 +1,20 @@
 import { useState } from 'react'
 import { isMuted, setMuted } from '../audio/synth'
-import { settings, setAutoSlide, setFallSpeed, setRain, setRangeLevel } from '../state/settings'
+import {
+  settings,
+  setAutoSlide,
+  setFallSpeed,
+  setRain,
+  setRainOn,
+  setRangeLevel,
+} from '../state/settings'
 import { levelToCount } from '../config'
 import { downloadScore } from '../score/downloadScore'
 
-/** 右下の小さな操作パネル。雨量・音域・落下速度スライダー・自動スライド・楽譜DL・ミュート。 */
+/** 右下の小さな操作パネル。雨ON/OFF・雨量・音域・落下速度・自動スライド・楽譜DL・ミュート。 */
 export function Controls() {
   const [mute, setMute] = useState(isMuted())
+  const [rainOn, setRainOnState] = useState(settings.rainOn)
   const [rain, setRainState] = useState(settings.rain)
   const [range, setRangeState] = useState(settings.rangeLevel)
   const [fall, setFallState] = useState(settings.fallSpeed)
@@ -26,6 +34,17 @@ export function Controls() {
 
   return (
     <div className="controls">
+      <button
+        className={`control-toggle ${rainOn ? 'on' : ''}`}
+        onClick={() => {
+          const next = !rainOn
+          setRainOn(next)
+          setRainOnState(next)
+        }}
+      >
+        {rainOn ? '🌧 雨: 降っている' : '⏸ 雨: 停止中'}
+      </button>
+
       <label className="control-row">
         <span className="control-label">☔ 雨量</span>
         <input

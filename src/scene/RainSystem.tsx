@@ -41,6 +41,7 @@ const POND_EDGE = POND_HALF * 0.97
 
 /** 現在の雨量から次の滴までの間隔（秒）を決める。雨量 0 なら Infinity（生成しない）。 */
 function nextInterval(): number {
+  if (!settings.rainOn) return Infinity // 停止トグル
   const rate = settings.rain * MAX_RATE
   if (rate <= 0.01) return Infinity
   return (1 / rate) * randRange(0.5, 1.5)
