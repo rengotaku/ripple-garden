@@ -9,13 +9,27 @@
   box-sizing: border-box;
 }
 
+/* iOS 横向きでの自動テキスト拡大を抑止（PCでは無影響）。 */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 html,
 body,
 #root,
 .app {
   width: 100%;
-  height: 100%;
+  /* モバイルのアドレスバーで下部UIが隠れる問題対策。100dvh は PC では 100vh と等価。 */
+  height: 100vh; /* dvh 非対応エンジン向けフォールバック */
+  height: 100dvh;
   overflow: hidden;
+}
+
+/* 引っ張って更新／ラバーバンドのスクロールを抑止（PCでは無影響）。 */
+html,
+body {
+  overscroll-behavior: none;
 }
 
 body {
@@ -527,4 +541,206 @@ body {
 .overview-item-name {
   flex: 1;
   text-align: left;
+}
+
+/* ============================================================
+   スマホ操作向けの強化（PCは現状維持）
+   - ここから下はタッチ端末を意識した追記。
+   - env(safe-area-inset-*) は PC で 0、100dvh は PC で 100vh と等価のため、
+     デスクトップの見た目は一切変わらない（数値はすべて既存値 + env()）。
+   - サイズ拡大などは @media (hover: none) and (pointer: coarse) でのみ適用し、
+     PC（hover 可・fine ポインタ。タッチ対応ノートPC含む）には効かせない。
+   ============================================================ */
+
+/* タップ時の灰色フラッシュとダブルタップズーム遅延を抑止（PCでは無影響）。 */
+button,
+.controls-fab,
+.controls-close,
+.control-toggle,
+.control-btn,
+.control-ico,
+.layer-btn,
+.draw-tool,
+.draw-info,
+.draw-actions button,
+.overview-item,
+.overview-close {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* パネル内スクロールがページへ波及しないように。 */
+.layer-list,
+.overview-legend {
+  overscroll-behavior: contain;
+}
+
+/* ===== セーフエリア対応（ノッチ／ホームインジケータ／角丸／横向き） =====
+   既存の固定値に env() を足すだけ。PC では env()=0 なので位置は不変。
+   元定義より後ろに置くことで、同詳細度でも確実に上書きされる。 */
+.controls-fab {
+  right: calc(1.1rem + env(safe-area-inset-right));
+  bottom: calc(1.1rem + env(safe-area-inset-bottom));
+}
+.controls {
+  right: calc(1.1rem + env(safe-area-inset-right));
+  bottom: calc(1.1rem + env(safe-area-inset-bottom));
+}
+.controls-fab.left {
+  left: calc(1.1rem + env(safe-area-inset-left));
+}
+.controls.left {
+  left: calc(1.1rem + env(safe-area-inset-left));
+}
+
+.app-title {
+  top: calc(1rem + env(safe-area-inset-top));
+  left: calc(1.1rem + env(safe-area-inset-left));
+}
+
+.draw-info {
+  top: calc(1.2rem + env(safe-area-inset-top));
+  right: calc(1.2rem + env(safe-area-inset-right));
+}
+.draw-hint {
+  top: calc(3.8rem + env(safe-area-inset-top));
+  right: calc(1.2rem + env(safe-area-inset-right));
+}
+
+.draw-tools {
+  top: calc(1.2rem + env(safe-area-inset-top));
+}
+
+.draw-actions {
+  bottom: calc(1.6rem + env(safe-area-inset-bottom));
+}
+
+/* .overview-close は .controls-close に position が無いため fixed を明示。 */
+.overview-close {
+  position: fixed;
+  top: calc(1.2rem + env(safe-area-inset-top));
+  right: calc(1.2rem + env(safe-area-inset-right));
+}
+.overview-legend {
+  top: calc(1.2rem + env(safe-area-inset-top));
+  left: calc(1.2rem + env(safe-area-inset-left));
+}
+
+/* ===== タッチ端末のみ：操作部を指で扱いやすい寸法へ（PCには効かない） ===== */
+@media (hover: none) and (pointer: coarse) {
+  /* パネル幅は据え置き（11.5rem）。左右2枚を同時に開いても狭い端末で重ならないように。
+     横向きの低い画面でも収まるよう高さを上限＋スクロール。 */
+  .controls {
+    max-height: calc(100dvh - 2.2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 各レイヤーの小アイコンボタン（約21x18px）を、据え置き幅でも3つ並ぶよう
+     高さ44px・幅は控えめ（32px）に。指の主たる当たり判定は高さで確保する。 */
+  .layer-head {
+    gap: 0.15rem;
+  }
+  .layer-btn {
+    flex: 0 0 auto;
+    min-width: 2rem;
+    min-height: 2.75rem;
+    padding: 0.4rem 0.25rem;
+  }
+
+  /* 閉じる/アイコン/FAB/丸ボタンを 44px 以上へ。 */
+  .controls-close {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.2rem;
+  }
+  .control-ico {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .control-btn {
+    width: 2.8rem;
+    height: 2.8rem;
+  }
+  .controls-fab {
+    width: 3.2rem;
+    height: 3.2rem;
+  }
+  .control-toggle {
+    min-height: 2.75rem;
+  }
+
+  /* レンジスライダー（設定4本＋レイヤーごとのテンポ）：つかみやすい太いつまみ。 */
+  .controls input[type='range'] {
+    height: 2.75rem;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .controls input[type='range']::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(150, 200, 230, 0.35);
+  }
+  .controls input[type='range']::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(150, 200, 230, 0.35);
+  }
+  .controls input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    margin-top: -11px;
+    border-radius: 50%;
+    background: #6fb3c9;
+    border: 2px solid #eaf6ff;
+  }
+  .controls input[type='range']::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #6fb3c9;
+    border: 2px solid #eaf6ff;
+  }
+
+  /* 落書き画面：情報ボタンを大きく、ヒントはその下へ。 */
+  .draw-info {
+    width: 2.8rem;
+    height: 2.8rem;
+  }
+  .draw-hint {
+    top: calc(4.2rem + env(safe-area-inset-top));
+    max-width: min(22rem, calc(100vw - 2.4rem));
+  }
+
+  /* ペン/消しゴム・下部アクションの高さを 44px 以上に。 */
+  .draw-tool,
+  .draw-actions button {
+    min-height: 2.75rem;
+  }
+
+  /* 3ボタンの行を 320px 幅でも収める（中央寄せは維持）。 */
+  .draw-actions {
+    width: calc(100vw - 1.2rem - env(safe-area-inset-left) - env(safe-area-inset-right));
+    max-width: 26rem;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .draw-actions button {
+    flex: 1 1 0;
+    padding: 0.6rem 0.4rem;
+    white-space: nowrap;
+  }
+
+  /* 全体表示：凡例行をタップしやすく、ツールバー/ノッチに対して高さを制限。 */
+  .overview-item {
+    min-height: 2.75rem;
+  }
+  .overview-legend {
+    max-height: calc(70dvh - env(safe-area-inset-top));
+    max-width: calc(100vw - 2.4rem - env(safe-area-inset-left) - env(safe-area-inset-right));
+  }
 }
