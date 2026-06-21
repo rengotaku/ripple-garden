@@ -185,9 +185,6 @@ export function Controls() {
                     </button>
                   </div>
                   <label className="layer-tempo" title="この落書きの落下速度">
-                    <span className="layer-tempo-icon">
-                      <ChevronsDown size={14} />
-                    </span>
                     <input
                       type="range"
                       min={0}
@@ -260,7 +257,7 @@ export function Controls() {
           </button>
 
           <label className="control-row">
-            <span className="control-label"><Sparkles size={14} /> 星の量</span>
+            <span className="control-label"><Sparkles size={14} /> 星の量（{Math.round(Math.max(0, (rain - 0.5) * 2) * 100)}%）</span>
             <input
               type="range"
               min={0}
@@ -292,7 +289,7 @@ export function Controls() {
           </label>
 
           <label className="control-row">
-            <span className="control-label"><ChevronsDown size={14} /> 落下速度</span>
+            <span className="control-label"><ChevronsDown size={14} /> 落下速度（{Math.round(fall * 100)}%）</span>
             <input
               type="range"
               min={0}
@@ -308,7 +305,7 @@ export function Controls() {
           </label>
 
           <label className="control-row">
-            <span className="control-label"><Volume2 size={14} /> 音量</span>
+            <span className="control-label"><Volume2 size={14} /> 音量（{Math.round(volume * 100)}%）</span>
             <input
               type="range"
               min={0}

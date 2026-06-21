@@ -38,10 +38,15 @@ const randRange = (min: number, max: number) => min + Math.random() * (max - min
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
 const POND_EDGE = POND_HALF * 0.97
 
-/** 現在の星の量から次の星までの間隔（秒）。停止中/星の量0なら Infinity。 */
+/** スライダー値(0..1)→実効量。中央(0.5)=0、右端(1)=最大。左半分は 0（降らない）。 */
+function rainAmount(): number {
+  return Math.max(0, (settings.rain - 0.5) * 2)
+}
+
+/** 現在の星の量から次の星までの間隔（秒）。停止中/実効量0なら Infinity。 */
 function nextInterval(): number {
   if (!settings.rainOn) return Infinity
-  const rate = settings.rain * MAX_RATE
+  const rate = rainAmount() * MAX_RATE
   if (rate <= 0.01) return Infinity
   return (1 / rate) * randRange(0.5, 1.5)
 }

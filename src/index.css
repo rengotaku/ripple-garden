@@ -289,14 +289,6 @@ body {
 .layer-tempo {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding-left: 1.1rem;
-}
-
-.layer-tempo-icon {
-  font-size: 0.75rem;
-  opacity: 0.8;
-  flex: 0 0 auto;
 }
 
 .layer-tempo input {
@@ -426,8 +418,7 @@ body {
 .controls-fab,
 .controls-close,
 .layer-btn,
-.draw-info,
-.layer-tempo-icon {
+.draw-info {
   display: inline-flex;
   align-items: center;
   justify-content: center;
