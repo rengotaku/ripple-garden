@@ -29,7 +29,7 @@ function slotToken(notes: string[]): string {
   return abc.length === 1 ? abc[0] : `[${abc.join('')}]`
 }
 
-export function eventsToAbc(events: NoteEvent[], title = 'ripple garden'): string {
+export function eventsToAbc(events: NoteEvent[], title = '星奏'): string {
   const evs = [...events].sort((a, b) => a.time - b.time)
 
   // 近接（半スロット未満）の音を 1 グループに。
@@ -68,7 +68,7 @@ export function eventsToAbc(events: NoteEvent[], title = 'ripple garden'): strin
   return [
     'X:1',
     `T:${title}`,
-    'C:generative (ripple garden)',
+    'C:generative (星奏 / hoshikanade)',
     'M:4/4',
     'L:1/8',
     'Q:1/4=100',

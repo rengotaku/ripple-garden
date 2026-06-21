@@ -52,7 +52,7 @@ export async function downloadScore(): Promise<boolean> {
 
     const a = document.createElement('a')
     a.href = url
-    a.download = `ripple-garden-score-${timestamp()}.svg`
+    a.download = `hoshikanade-score-${timestamp()}.svg`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

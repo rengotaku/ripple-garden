@@ -71,7 +71,7 @@ try {
 
   // 序盤フレーム
   await page.waitForTimeout(1500)
-  await page.screenshot({ path: '/tmp/ripple-garden-smoke-early.png' })
+  await page.screenshot({ path: '/tmp/hoshikanade-smoke-early.png' })
 
   // 蓄積後（水面シムが発散しないか確認するため時間を置く）
   await page.waitForTimeout(6000)
@@ -89,7 +89,7 @@ try {
     }
   })
 
-  await page.screenshot({ path: '/tmp/ripple-garden-smoke.png' })
+  await page.screenshot({ path: '/tmp/hoshikanade-smoke.png' })
 
   // 楽譜ダウンロード（abcjs 経路）の動作確認: ボタンを押して download が出るか。
   try {
@@ -124,6 +124,6 @@ if (errors.length) {
   for (const e of errors) console.error('  - ' + e)
   exitCode = 1
 } else {
-  console.log('\nSMOKE PASS — screenshot at /tmp/ripple-garden-smoke.png')
+  console.log('\nSMOKE PASS — screenshot at /tmp/hoshikanade-smoke.png')
 }
 process.exit(exitCode)

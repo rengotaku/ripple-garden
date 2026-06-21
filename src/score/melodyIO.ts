@@ -5,7 +5,7 @@ import type { Layer, NormPoint } from '../state/layers'
  * なぞって作曲の「レイヤー一式（合奏）」の保存（エクスポート）／読み込み（インポート）。
  * 再インポート可能な JSON を媒体にする。
  */
-const FILE_TYPE = 'ripple-garden-composition'
+const FILE_TYPE = 'hoshikanade-composition'
 
 export type ImportedLayer = {
   notes: SongNote[]
@@ -29,7 +29,7 @@ export function exportComposition(layers: Layer[]): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `ripple-garden-composition-${timestamp()}.json`
+  a.download = `hoshikanade-composition-${timestamp()}.json`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
