@@ -11,16 +11,20 @@ import {
 } from '../state/settings'
 import {
   addLayer,
-  appendToLayer,
+  appendSection,
   getLayers,
+  getSections,
   removeLayer,
+  removeSection,
+  replaceSection,
+  sectionSlice,
   setLayerTempo,
   setLayers,
   subscribeLayers,
   toggleLayer,
-  updateLayer,
 } from '../state/layers'
-import { levelToCount, notesForLevel } from '../config'
+import type { SongNote } from '../audio/songs'
+import { levelToCount, notesForLevel, PITCH_POOL } from '../config'
 import { downloadScore } from '../score/downloadScore'
 import { strokesToMelody, type Stroke } from '../score/drawMelody'
 import { exportComposition, importComposition } from '../score/melodyIO'
@@ -48,6 +52,27 @@ import { OverviewOverlay } from './OverviewOverlay'
 
 const ICON = 16
 
+/** 小節カードのミニ輪郭（音高の上下）のサイズ。 */
+const SPARK_W = 38
+const SPARK_H = 16
+
+/** 小節の音符列を、音高の輪郭（SVG polyline points）に変換する。和音は先頭音を代表とする。 */
+function sparkPoints(notes: SongNote[]): string {
+  const n = notes.length
+  if (n < 1) return ''
+  const pts: string[] = []
+  for (let i = 0; i < n; i++) {
+    const note = notes[i].notes[0]
+    if (!note) continue
+    const idx = PITCH_POOL.indexOf(note)
+    const frac = idx >= 0 ? idx / (PITCH_POOL.length - 1) : 0.5
+    const x = n > 1 ? (i / (n - 1)) * SPARK_W : SPARK_W / 2
+    const y = SPARK_H - frac * SPARK_H // 高音ほど上
+    pts.push(`${x.toFixed(1)},${y.toFixed(1)}`)
+  }
+  return pts.join(' ')
+}
+
 /** 右＝なぞって作曲メニュー、左＝星と場の設定メニュー（別々に開閉）。 */
 export function Controls() {
   const [mute, setMute] = useState(isMuted())
@@ -58,7 +83,8 @@ export function Controls() {
   const [volume, setVolumeUi] = useState(settings.volume)
   const [circle, setCircle] = useState(settings.barShape === 'circle')
   const [drawing, setDrawing] = useState(false)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  // 小節編集の対象（レイヤーid＋小節index）。append は末尾追加なので index は持たない。
+  const [editTarget, setEditTarget] = useState<{ id: number; index: number } | null>(null)
   const [appendId, setAppendId] = useState<number | null>(null)
   const [overviewOpen, setOverviewOpen] = useState(false)
   const [composeOpen, setComposeOpen] = useState(true)
@@ -81,9 +107,9 @@ export function Controls() {
     setTimeout(() => setScoreMsg(null), 2000)
   }
 
-  const startEdit = (id: number) => {
+  const startEditSection = (id: number, index: number) => {
     setOverviewOpen(false)
-    setEditingId(id)
+    setEditTarget({ id, index })
     setDrawing(true)
   }
 
@@ -94,7 +120,7 @@ export function Controls() {
 
   const closeDraw = () => {
     setDrawing(false)
-    setEditingId(null)
+    setEditTarget(null)
     setAppendId(null)
   }
 
@@ -108,12 +134,12 @@ export function Controls() {
     const norm = strokes
       .map((s) => s.map((p) => ({ x: p.x / size.w, y: p.y / size.h })))
       .filter((s) => s.length >= 2)
-    if (appendId !== null) {
-      // 節を継ぎ足す：対象レイヤーの旋律末尾へ連結し、1つの長いメロディにする。
-      appendToLayer(appendId, melody, norm)
-    } else if (editingId !== null) {
-      // 再編集：notes を作り直し、軌跡も差し替える。色・個別テンポ・有効状態は維持。
-      updateLayer(editingId, { notes: melody, strokes: norm })
+    if (editTarget !== null) {
+      // 小節を描き直す：その小節だけ差し替える（色・個別テンポ・有効状態は維持）。
+      replaceSection(editTarget.id, editTarget.index, melody, norm)
+    } else if (appendId !== null) {
+      // 小節を継ぎ足す：対象レイヤーの旋律末尾へ連結し、1つの長いメロディにする。
+      appendSection(appendId, melody, norm)
     } else {
       addLayer(melody, norm) // 個別テンポは中立(0.5)。全体の速さは「時の流れ」(マスター)で効く
     }
@@ -135,9 +161,14 @@ export function Controls() {
         <DrawOverlay
           onComplete={handleDrawComplete}
           onCancel={closeDraw}
-          priorLayers={editingId !== null ? layers.filter((l) => l.id !== editingId) : layers}
+          priorLayers={editTarget !== null ? layers.filter((l) => l.id !== editTarget.id) : layers}
           initialStrokes={
-            editingId !== null ? layers.find((l) => l.id === editingId)?.strokes : undefined
+            editTarget !== null
+              ? (() => {
+                  const l = layers.find((x) => x.id === editTarget.id)
+                  return l ? sectionSlice(l, editTarget.index).strokes : undefined
+                })()
+              : undefined
           }
         />
       )}
@@ -146,7 +177,7 @@ export function Controls() {
         <OverviewOverlay
           layers={layers}
           onClose={() => setOverviewOpen(false)}
-          onEdit={startEdit}
+          onEdit={(id) => startEditSection(id, 0)}
         />
       )}
 
@@ -189,22 +220,60 @@ export function Controls() {
                   <div className="layer-head">
                     <span className="layer-dot" style={{ background: l.color }} />
                     <span className="layer-name">{i + 1}</span>
-                    <button className="layer-btn" onClick={() => startEdit(l.id)} aria-label="編集">
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      className="layer-btn"
-                      onClick={() => startAppend(l.id)}
-                      aria-label="節を追加"
-                      title="節を追加（旋律を継ぎ足す）"
-                    >
-                      <Plus size={15} />
-                    </button>
                     <button className="layer-btn" onClick={() => toggleLayer(l.id)} aria-label="有効/無効">
                       {l.enabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
                     </button>
                     <button className="layer-btn" onClick={() => removeLayer(l.id)} aria-label="削除">
                       <Trash2 size={15} />
+                    </button>
+                  </div>
+
+                  {/* 小節カード：タップで描き直し、× で削除、＋ で末尾に小節追加 */}
+                  <div className="section-cards">
+                    {getSections(l).map((_, idx) => (
+                      <span key={`${l.id}-${idx}`} className="section-card-wrap">
+                        <button
+                          className="section-card"
+                          style={{ borderColor: l.color }}
+                          onClick={() => startEditSection(l.id, idx)}
+                          title={`小節${idx + 1}を描き直す`}
+                          aria-label={`小節${idx + 1}を描き直す`}
+                        >
+                          <span className="section-num">{idx + 1}</span>
+                          <svg
+                            className="section-spark"
+                            width={SPARK_W}
+                            height={SPARK_H}
+                            viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
+                            aria-hidden="true"
+                          >
+                            <polyline
+                              points={sparkPoints(sectionSlice(l, idx).notes)}
+                              fill="none"
+                              stroke={l.color}
+                              strokeWidth={1.5}
+                              strokeLinejoin="round"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          className="section-del"
+                          onClick={() => removeSection(l.id, idx)}
+                          aria-label={`小節${idx + 1}を削除`}
+                          title="この小節を削除"
+                        >
+                          <X size={11} />
+                        </button>
+                      </span>
+                    ))}
+                    <button
+                      className="section-add"
+                      onClick={() => startAppend(l.id)}
+                      aria-label="小節を追加"
+                      title="小節を追加（空のキャンバスに描く）"
+                    >
+                      <Plus size={14} />
                     </button>
                   </div>
                   <label className="layer-tempo" title="この落書きの落下速度">
