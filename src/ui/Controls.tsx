@@ -29,6 +29,7 @@ import {
   Download,
   FileMusic,
   LayoutGrid,
+  Lock,
   Music,
   Pencil,
   Rows3,
@@ -63,6 +64,8 @@ export function Controls() {
   const fileInput = useRef<HTMLInputElement>(null)
 
   const layers = useSyncExternalStore(subscribeLayers, getLayers, getLayers)
+  // 落書きの音は描いた時点の音域でバーへマップされるため、1つでもあれば音域を固定する。
+  const rangeLocked = layers.length > 0
 
   const handleScore = async () => {
     setScoreMsg('…')
@@ -273,20 +276,27 @@ export function Controls() {
             />
           </label>
 
-          <label className="control-row">
-            <span className="control-label"><Music size={14} /> 音域（{levelToCount(range)}音）</span>
+          <label className={`control-row ${rangeLocked ? 'locked' : ''}`}>
+            <span className="control-label">
+              <Music size={14} /> 音域（{levelToCount(range)}音）
+              {rangeLocked && <Lock size={12} className="control-lock" />}
+            </span>
             <input
               type="range"
               min={0}
               max={1}
               step={0.01}
               value={range}
+              disabled={rangeLocked}
               onChange={(e) => {
                 const v = Number(e.target.value)
                 setRangeLevel(v)
                 setRangeState(v)
               }}
             />
+            {rangeLocked && (
+              <span className="control-hint">落書きがある間は音域を固定します（全削除でロック解除）</span>
+            )}
           </label>
 
           <label className="control-row">
