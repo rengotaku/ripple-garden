@@ -1,5 +1,6 @@
 import type { SongNote } from '../audio/songs'
-import type { Layer, NormPoint } from '../state/layers'
+import type { Layer, LayerSection, NormPoint } from '../state/layers'
+import { getSections } from '../state/layers'
 
 /**
  * なぞって作曲の「レイヤー一式（合奏）」の保存（エクスポート）／読み込み（インポート）。
@@ -11,6 +12,7 @@ export type ImportedLayer = {
   notes: SongNote[]
   enabled: boolean
   strokes?: NormPoint[][]
+  sections?: LayerSection[]
   tempo?: number
 }
 
@@ -22,6 +24,7 @@ export function exportComposition(layers: Layer[]): void {
       notes: l.notes,
       enabled: l.enabled,
       strokes: l.strokes,
+      sections: getSections(l),
       tempo: l.tempo,
     })),
   }
@@ -51,6 +54,7 @@ export async function importComposition(file: File): Promise<ImportedLayer[]> {
         notes?: unknown
         enabled?: unknown
         strokes?: unknown
+        sections?: unknown
         tempo?: unknown
       }
       const notes = Array.isArray(obj.notes)
@@ -81,10 +85,21 @@ export async function importComposition(file: File): Promise<ImportedLayer[]> {
             )
             .filter((s) => s.length >= 2)
         : undefined
+      // 小節境界（任意）。値が壊れていれば捨て、setLayers 側で1小節に畳む。
+      const sections = Array.isArray(obj.sections)
+        ? obj.sections
+            .map((s: unknown) => (s ?? {}) as { noteCount?: unknown; strokeCount?: unknown })
+            .filter((s) => Number(s.noteCount) >= 0 && Number(s.strokeCount) >= 0)
+            .map((s): LayerSection => ({
+              noteCount: Number(s.noteCount),
+              strokeCount: Number(s.strokeCount),
+            }))
+        : undefined
       return {
         notes: notes.slice(0, 512),
         enabled: obj.enabled !== false,
         strokes: strokes && strokes.length ? strokes : undefined,
+        sections: sections && sections.length ? sections : undefined,
         tempo: typeof obj.tempo === 'number' ? obj.tempo : undefined,
       }
     })
