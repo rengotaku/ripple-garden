@@ -196,15 +196,10 @@ body {
   font-weight: 300;
 }
 
-/* 時間グリッド（縦線）：細線＝ステップ / 太線＝小節境界 */
+/* 時間グリッド（縦線）：1小節内の拍の刻み（ステップ） */
 .step-line {
   stroke: rgba(150, 195, 230, 0.12);
   stroke-width: 1;
-}
-
-.measure-line {
-  stroke: rgba(190, 225, 250, 0.45);
-  stroke-width: 1.5;
 }
 
 .measure-text {

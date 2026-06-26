@@ -170,6 +170,15 @@ export function Controls() {
                 })()
               : undefined
           }
+          measureLabel={(() => {
+            // 編集＝その小節番号 / 追加＝末尾+1 / 新規＝小節1
+            if (editTarget !== null) return `小節${editTarget.index + 1}`
+            if (appendId !== null) {
+              const l = layers.find((x) => x.id === appendId)
+              return `小節${(l ? getSections(l).length : 0) + 1}`
+            }
+            return '小節1'
+          })()}
         />
       )}
 

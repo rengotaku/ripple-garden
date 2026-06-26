@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Eraser, Info, Pencil } from 'lucide-react'
-import {
-  MEASURES_PER_CANVAS,
-  STEPS_PER_MEASURE,
-  TOTAL_STEPS,
-  type Point,
-  type Stroke,
-} from '../score/drawMelody'
+import { TOTAL_STEPS, type Point, type Stroke } from '../score/drawMelody'
 import { layerLines } from '../score/layerLines'
 import type { Layer, NormPoint } from '../state/layers'
 
@@ -18,6 +12,8 @@ export type DrawOverlayProps = {
   priorLayers: Layer[]
   /** 再編集時の初期ストローク（正規化座標）。画面サイズへ戻して読み込む。 */
   initialStrokes?: NormPoint[][]
+  /** いま描いている小節のラベル（例: 「小節2」）。1キャンバス＝1小節。 */
+  measureLabel?: string
 }
 
 /** 縦の目安（音の高さ）のガイド線。上下のUI（ツール/アクション）とかぶらないよう内側に余白をとる。 */
@@ -63,7 +59,13 @@ function distToStroke(p: Point, stroke: Point[]): number {
  * ・ペン/消しゴムを切り替えられる。消しゴムは近傍のストロークを丸ごと消す。
  * ・点の取り込みは即時、表示は rAF でまとめて更新（長い線でも軽い）。
  */
-export function DrawOverlay({ onComplete, onCancel, priorLayers, initialStrokes }: DrawOverlayProps) {
+export function DrawOverlay({
+  onComplete,
+  onCancel,
+  priorLayers,
+  initialStrokes,
+  measureLabel,
+}: DrawOverlayProps) {
   const size = useRef({ w: window.innerWidth, h: window.innerHeight })
   // 再編集時：正規化ストロークを画面座標の Point[] に戻す（t は表示専用なので連番でよい）。
   const initial = useRef<Stroke[]>(
@@ -156,32 +158,15 @@ export function DrawOverlay({ onComplete, onCancel, priorLayers, initialStrokes 
       onPointerUp={end}
     >
       <svg width="100%" height="100%">
-        {/* 時間グリッド（縦＝時間。細線＝ステップ / 太線＝小節境界） */}
+        {/* 時間グリッド（縦＝この小節内の時間。細線＝ステップ＝拍の刻み） */}
         {Array.from({ length: TOTAL_STEPS - 1 }, (_, k) => {
           const step = k + 1
           const x = (step / TOTAL_STEPS) * w
-          const isMeasure = step % STEPS_PER_MEASURE === 0
-          return (
-            <line
-              key={`t${step}`}
-              x1={x}
-              y1={0}
-              x2={x}
-              y2={h}
-              className={isMeasure ? 'measure-line' : 'step-line'}
-            />
-          )
+          return <line key={`t${step}`} x1={x} y1={0} x2={x} y2={h} className="step-line" />
         })}
-        {Array.from({ length: MEASURES_PER_CANVAS }, (_, m) => (
-          <text
-            key={`m${m}`}
-            x={(m / MEASURES_PER_CANVAS) * w + 8}
-            y={20}
-            className="measure-text"
-          >
-            小節{m + 1}
-          </text>
-        ))}
+        <text x={8} y={20} className="measure-text">
+          {measureLabel ?? '小節1'}
+        </text>
 
         {/* 目安軸（縦＝音の高さ） */}
         {PITCH_LINES.map((f) => (
@@ -247,7 +232,7 @@ export function DrawOverlay({ onComplete, onCancel, priorLayers, initialStrokes 
       </button>
       {infoOpen && (
         <div className="draw-hint" onPointerDown={(e) => e.stopPropagation()}>
-          横＝時間（左→右）。縦線が小節の区切りです。縦＝音の高さ（上が高音）。横位置がそのまま発音タイミング、縦に重ねて描くと和音になります。消しゴムで近くの線を消せます。描けたら「落書き完了」。
+          このキャンバスは1小節です。横＝時間（左→右、縦線は拍の刻み）、縦＝音の高さ（上が高音）。横位置がそのまま発音タイミング、縦に重ねて描くと和音になります。描けたら「落書き完了」、＋で次の小節を足せます。
         </div>
       )}
 

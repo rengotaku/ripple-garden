@@ -11,8 +11,8 @@ export const MELODY_STEP_SEC = 0.36
 /** 上下の端に設ける「最高音／最低音」帯の割合。画面端のUI(ツール/アクション)とかぶらないよう余白を広めに。 */
 const PITCH_PAD = 0.2
 
-/** 1 キャンバスが表す小節数（横＝時間。左→右に小節が並ぶ）。 */
-export const MEASURES_PER_CANVAS = 4
+/** 1 キャンバスが表す小節数。1 落書き＝ちょうど 1 小節（横＝その小節内の時間）。 */
+export const MEASURES_PER_CANVAS = 1
 /** 1 小節あたりのステップ数（拍の細分。各ステップ＝1音ぶんの時間）。 */
 export const STEPS_PER_MEASURE = 8
 /** キャンバス全体のステップ数（＝時間グリッドの列数）。 */
