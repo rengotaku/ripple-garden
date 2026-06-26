@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Eraser, Info, Pencil } from 'lucide-react'
-import type { Point, Stroke } from '../score/drawMelody'
+import {
+  MEASURES_PER_CANVAS,
+  STEPS_PER_MEASURE,
+  TOTAL_STEPS,
+  type Point,
+  type Stroke,
+} from '../score/drawMelody'
 import { layerLines } from '../score/layerLines'
 import type { Layer, NormPoint } from '../state/layers'
 
@@ -150,6 +156,33 @@ export function DrawOverlay({ onComplete, onCancel, priorLayers, initialStrokes 
       onPointerUp={end}
     >
       <svg width="100%" height="100%">
+        {/* 時間グリッド（縦＝時間。細線＝ステップ / 太線＝小節境界） */}
+        {Array.from({ length: TOTAL_STEPS - 1 }, (_, k) => {
+          const step = k + 1
+          const x = (step / TOTAL_STEPS) * w
+          const isMeasure = step % STEPS_PER_MEASURE === 0
+          return (
+            <line
+              key={`t${step}`}
+              x1={x}
+              y1={0}
+              x2={x}
+              y2={h}
+              className={isMeasure ? 'measure-line' : 'step-line'}
+            />
+          )
+        })}
+        {Array.from({ length: MEASURES_PER_CANVAS }, (_, m) => (
+          <text
+            key={`m${m}`}
+            x={(m / MEASURES_PER_CANVAS) * w + 8}
+            y={20}
+            className="measure-text"
+          >
+            小節{m + 1}
+          </text>
+        ))}
+
         {/* 目安軸（縦＝音の高さ） */}
         {PITCH_LINES.map((f) => (
           <line key={`p${f}`} x1={0} y1={h * f} x2={w} y2={h * f} className="guide-line" />
@@ -214,7 +247,7 @@ export function DrawOverlay({ onComplete, onCancel, priorLayers, initialStrokes 
       </button>
       {infoOpen && (
         <div className="draw-hint" onPointerDown={(e) => e.stopPropagation()}>
-          縦＝音の高さ（上が高音）。複数本を自由に描けます（別の線＝跳躍 / 横に重ねて描く＝和音）。消しゴムで近くの線を消せます。描けたら「落書き完了」。
+          横＝時間（左→右）。縦線が小節の区切りです。縦＝音の高さ（上が高音）。横位置がそのまま発音タイミング、縦に重ねて描くと和音になります。消しゴムで近くの線を消せます。描けたら「落書き完了」。
         </div>
       )}
 

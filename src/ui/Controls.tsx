@@ -125,7 +125,7 @@ export function Controls() {
   }
 
   const handleDrawComplete = (strokes: Stroke[], size: { w: number; h: number }) => {
-    const melody = strokesToMelody(strokes, size.h, notesForLevel(settings.rangeLevel))
+    const melody = strokesToMelody(strokes, size.w, size.h, notesForLevel(settings.rangeLevel))
     if (!melody.length) {
       closeDraw()
       return
