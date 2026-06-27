@@ -74,6 +74,17 @@ export function sectionSlice(
   }
 }
 
+/** 指定小節を除く、同じレイヤーの他の小節すべての軌跡（下絵表示用）。 */
+export function otherSectionStrokes(layer: Layer, exceptIndex: number): NormPoint[][] {
+  const secs = getSections(layer)
+  const out: NormPoint[][] = []
+  for (let i = 0; i < secs.length; i++) {
+    if (i === exceptIndex) continue
+    out.push(...sectionSlice(layer, i).strokes)
+  }
+  return out
+}
+
 /** 空（無音）の1小節ぶんの音符列（休符イベント）を作る。 */
 export function blankMeasureNotes(): SongNote[] {
   return Array.from({ length: STEPS_PER_MEASURE }, () => ({ notes: [] as string[], beats: 1 }))

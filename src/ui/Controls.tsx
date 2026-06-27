@@ -16,6 +16,7 @@ import {
   createLayer,
   getLayers,
   getSections,
+  otherSectionStrokes,
   removeLayer,
   removeMeasureFromAll,
   replaceSection,
@@ -210,6 +211,19 @@ export function Controls() {
                 })()
               : undefined
           }
+          siblingStrokes={
+            editTarget !== null
+              ? (() => {
+                  const l = layers.find((x) => x.id === editTarget.id)
+                  return l ? otherSectionStrokes(l, editTarget.index) : undefined
+                })()
+              : undefined
+          }
+          siblingColor={
+            editTarget !== null ? layers.find((x) => x.id === editTarget.id)?.color : undefined
+          }
+          // L2以降（マスター=先頭レイヤー以外）の小節編集なら、無描画でも完了して空（無音）に戻せる。
+          allowBlank={editTarget !== null && layers[0]?.id !== editTarget.id}
           measureLabel={(() => {
             // 編集＝その小節番号 / 追加＝末尾+1 / 新規＝小節1
             if (editTarget !== null) return `小節${editTarget.index + 1}`

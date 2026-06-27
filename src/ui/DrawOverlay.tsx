@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Eraser, Eye, EyeOff, Info, Pencil } from 'lucide-react'
+import { Eraser, Eye, EyeOff, Info, Layers, Pencil, Trash2 } from 'lucide-react'
 import { TOTAL_STEPS, type Point, type Stroke } from '../score/drawMelody'
 import { layerLines } from '../score/layerLines'
 import type { Layer, NormPoint } from '../state/layers'
@@ -12,8 +12,14 @@ export type DrawOverlayProps = {
   priorLayers: Layer[]
   /** 再編集時の初期ストローク（正規化座標）。画面サイズへ戻して読み込む。 */
   initialStrokes?: NormPoint[][]
+  /** 編集中レイヤーの他の小節の軌跡（下絵として薄く表示）。 */
+  siblingStrokes?: NormPoint[][]
+  /** 他の小節の下絵を描く色（編集中レイヤーの色）。 */
+  siblingColor?: string
   /** いま描いている小節のラベル（例: 「小節2」）。1キャンバス＝1小節。 */
   measureLabel?: string
+  /** 無描画（ブランク）でも「落書き完了」を許す（L2以降の小節を空＝無音に戻すため）。 */
+  allowBlank?: boolean
 }
 
 /** 縦の目安（音の高さ）のガイド線。上下のUI（ツール/アクション）とかぶらないよう内側に余白をとる。 */
@@ -64,7 +70,10 @@ export function DrawOverlay({
   onCancel,
   priorLayers,
   initialStrokes,
+  siblingStrokes,
+  siblingColor,
   measureLabel,
+  allowBlank = false,
 }: DrawOverlayProps) {
   const size = useRef({ w: window.innerWidth, h: window.innerHeight })
   // 再編集時：正規化ストロークを画面座標の Point[] に戻す（t は表示専用なので連番でよい）。
@@ -80,6 +89,8 @@ export function DrawOverlay({
   const [infoOpen, setInfoOpen] = useState(false)
   // 他レイヤーの薄い表示（ゴースト）を編集中だけ消せる。音には影響しない。
   const [showPrior, setShowPrior] = useState(true)
+  // 同レイヤーの他小節の薄い表示（下絵）を切り替える。音には影響しない。
+  const [showSiblings, setShowSiblings] = useState(true)
   const strokesRef = useRef<Stroke[]>(initial.current)
   const curRef = useRef<Point[]>([])
   const drawing = useRef(false)
@@ -145,12 +156,22 @@ export function DrawOverlay({
     strokesRef.current = strokesRef.current.slice(0, -1)
     setStrokes(strokesRef.current.slice())
   }
+  /** この小節の描画を一括消去（クリア）。allowBlank なら空のまま完了して無音にできる。 */
+  const clearAll = () => {
+    drawing.current = false
+    curRef.current = []
+    strokesRef.current = []
+    setStrokes([])
+    setCurrent([])
+  }
   const complete = () => {
-    if (strokesRef.current.length) onComplete(strokesRef.current, size.current)
+    // allowBlank（L2以降）なら無描画でも完了＝その小節を空（無音）にする。
+    if (strokesRef.current.length || allowBlank) onComplete(strokesRef.current, size.current)
   }
 
   const { w, h } = size.current
   const hasStrokes = strokes.length > 0
+  const siblings = siblingStrokes ?? []
 
   return (
     <div
@@ -182,6 +203,24 @@ export function DrawOverlay({
             {g.label}
           </text>
         ))}
+
+        {/* 同レイヤーの他小節を下絵として薄く表示（破線）。トグルで非表示にできる。 */}
+        {showSiblings &&
+          siblings
+            .filter((s) => s.length >= 2)
+            .map((s, i) => (
+              <polyline
+                key={`sib-${i}`}
+                points={s.map((p) => `${(p.x * w).toFixed(0)},${(p.y * h).toFixed(0)}`).join(' ')}
+                fill="none"
+                stroke={siblingColor ?? '#9fb8cc'}
+                strokeWidth={2}
+                strokeOpacity={0.22}
+                strokeDasharray="6 6"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            ))}
 
         {/* 重ねがけ用: 既存レイヤーを薄く表示（描いた軌跡があれば実物を再表示）。トグルで非表示にできる。 */}
         {showPrior &&
@@ -235,7 +274,8 @@ export function DrawOverlay({
       </button>
       {infoOpen && (
         <div className="draw-hint" onPointerDown={(e) => e.stopPropagation()}>
-          このキャンバスは1小節です。横＝時間（左→右、縦線は拍の刻み）、縦＝音の高さ（上が高音）。横位置がそのまま発音タイミング、縦に重ねて描くと和音になります。描けたら「落書き完了」、＋で次の小節を足せます。
+          このキャンバスは1小節です。横＝時間（左→右、縦線は拍の刻み）、縦＝音の高さ（上が高音）。横位置がそのまま発音タイミング、縦に重ねて描くと和音になります。描けたら「落書き完了」、＋で次の小節を足せます。上部の目アイコンで他レイヤー／他の小節の下絵を表示切替できます。
+          {allowBlank && '「全消去」して何も描かずに完了すると、この小節を空（無音）に戻せます。'}
         </div>
       )}
 
@@ -259,13 +299,25 @@ export function DrawOverlay({
         </button>
         {priorLayers.length > 0 && (
           <button
-            className={`draw-tool ${showPrior ? '' : 'on'}`}
+            className={`draw-tool ${showPrior ? 'on' : ''}`}
             onClick={() => setShowPrior((v) => !v)}
             aria-label="他レイヤーの表示切替"
-            aria-pressed={!showPrior}
+            aria-pressed={showPrior}
             title="他のレイヤーの薄い表示をオン/オフ（音には影響しません）"
           >
             {showPrior ? <Eye size={16} /> : <EyeOff size={16} />} 他レイヤー
+          </button>
+        )}
+        {siblings.length > 0 && (
+          <button
+            className={`draw-tool ${showSiblings ? 'on' : ''}`}
+            onClick={() => setShowSiblings((v) => !v)}
+            aria-label="同レイヤーの他小節の表示切替"
+            aria-pressed={showSiblings}
+            title="同じレイヤーの他の小節の下絵をオン/オフ（音には影響しません）"
+          >
+            {showSiblings ? <Eye size={16} /> : <EyeOff size={16} />}
+            <Layers size={14} /> 他の小節
           </button>
         )}
       </div>
@@ -274,10 +326,13 @@ export function DrawOverlay({
         <button className="draw-cancel" onClick={onCancel}>
           やめる
         </button>
+        <button className="draw-clear" onClick={clearAll} disabled={!hasStrokes}>
+          <Trash2 size={15} /> 全消去
+        </button>
         <button className="draw-undo" onClick={undo} disabled={!hasStrokes}>
           ひとつ戻す
         </button>
-        <button className="draw-done" onClick={complete} disabled={!hasStrokes}>
+        <button className="draw-done" onClick={complete} disabled={!hasStrokes && !allowBlank}>
           落書き完了
         </button>
       </div>
